@@ -7,7 +7,13 @@ using namespace std;
 ChessPiece::ChessPiece(PieceType pieceType, Player player){
     this->pieceType = pieceType;
     this->player = player;
-    this->captured = false;
+}
+ChessPiece::ChessPiece(const ChessPiece &piece){
+    this->pieceType = piece.pieceType;
+    this->player = piece.player;
+}
+bool ChessPiece::operator==(const ChessPiece &other) const{
+    return this->pieceType == other.pieceType && this->player == other.player;
 }
 char ChessPiece::pieceChar(){
 

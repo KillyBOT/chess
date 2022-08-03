@@ -8,10 +8,11 @@ using namespace chess_defs;
 struct ChessPiece {
 
     PieceType pieceType;
-    bool captured;
     Player player;
 
     ChessPiece(PieceType pieceType = kPiecePawn, Player player = kPlayerWhite);
+    ChessPiece(const ChessPiece &piece);
+    bool operator==(const ChessPiece &other) const;
 
     char pieceChar();
 

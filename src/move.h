@@ -1,9 +1,11 @@
 #ifndef MOVE_H_
 #define MOVE_H_
 
-#include "chess_defs.h"
-
 #include <string>
+#include <vector>
+
+#include "chess_defs.h"
+#include "piece.h"
 
 struct ChessPos{
     char col, row;
@@ -23,13 +25,14 @@ struct ChessPosHash{
 struct ChessMove{
     ChessPos pos;
     ChessPos newPos;
+    ChessPiece promotion;
 
-    ChessMove(ChessPos pos = ChessPos(), ChessPos newPos = ChessPos());
+    ChessMove(ChessPos pos = ChessPos(), ChessPos newPos = ChessPos(), ChessPiece promotion = ChessPiece());
 
     bool isInBounds();
 
     //bool check_move_validity(ChessBoard &board);
-    //string str(ChessBoard &board);
+    std::string basicStr();
 };
 
 #endif

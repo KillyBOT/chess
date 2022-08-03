@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "move.h"
 
@@ -31,11 +33,16 @@ std::size_t ChessPosHash::operator() (const ChessPos &pos) const {
     return hash;
 }
 
-ChessMove::ChessMove(ChessPos pos, ChessPos newPos){
+ChessMove::ChessMove(ChessPos pos, ChessPos newPos, ChessPiece promotion){
     this->pos = pos;
     this->newPos = newPos;
+    this->promotion = promotion;
 }
 
 bool ChessMove::isInBounds(){
     return (this->pos.isInBounds() && this->newPos.isInBounds());
+}
+
+string ChessMove::basicStr(){
+    return this->pos.str() + ' ' + this->newPos.str();
 }

@@ -5,33 +5,48 @@
 #include "move.h"
 #include "board.h"
 #include "mcts.h"
-
+#include "minimax.h"
 
 int main(){
 
     using std::cout;
     using std::endl;
+    using std::vector;
+
+    // ChessBoard board = ChessBoard(false);
+    
+    // board.addPiece(ChessPos('e',1),ChessPiece(kPieceKing,kPlayerWhite));
+    // board.addPiece(ChessPos('a',1),ChessPiece(kPieceRook,kPlayerWhite));
+    // board.addPiece(ChessPos('h',1),ChessPiece(kPieceRook,kPlayerWhite));
+    // board.addPiece(ChessPos('g',1),ChessPiece(kPiecePawn,kPlayerWhite));
+    // board.printBoard();
+
+    // for(ChessMove move : board.getPossibleMoves()){
+    //     cout << move.basicStr() << endl;
+    // }
+
+    //board.doMove(ChessMove(ChessPiece(kPieceKing,kPlayerBlack),ChessPos('e',8),ChessPos('b',8)));
+    //board.printBoard();
 
     ChessBoard board = ChessBoard();
-    // board.addPiece(ChessPos('a',8),ChessPiece(kPieceKing,kPlayerWhite));
-    // board.addPiece(ChessPos('h',8),ChessPiece(kPieceQueen,kPlayerBlack));
-    // for(ChessMove move : board.getPossibleMoves()){
-    //     cout << move.pos.str() << ' ' << move.newPos.str() << endl;
-    // }
     board.printBoard();
-
     srand(time(NULL));
 
     vector<ChessMove> moves;
-    MCTS mcts = MCTS();
+    //MCTS mcts = MCTS();
+    Minimax minimax = Minimax(heuristic_basic, 3, true);
     
     while(!board.hasWon(kPlayerWhite) && !board.hasWon(kPlayerBlack)){
-        board.doMove(mcts.findOptimalPath(board));
+        //board.doMove(mcts.findOptimalMove(board));
+        board.doMove(minimax.findOptimalMove(board));
         board.printBoard();
 
-        moves = board.getPossibleMoves();
+        if(board.state() == kStateWhiteWin || board.state() == kStateBlackWin || board.state() == kStateStalemate) break;
+
+        vector<ChessMove> moves = board.getPossibleMoves();
         board.doMove(moves[rand() % moves.size()]);
         board.printBoard();
+        
     }
 
     return 0;

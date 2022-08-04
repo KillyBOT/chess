@@ -7,6 +7,7 @@ using namespace std;
 ChessPiece::ChessPiece(PieceType pieceType, Player player){
     this->pieceType = pieceType;
     this->player = player;
+    this->hasMoved = false;
 }
 ChessPiece::ChessPiece(const ChessPiece &piece){
     this->pieceType = piece.pieceType;
@@ -15,33 +16,37 @@ ChessPiece::ChessPiece(const ChessPiece &piece){
 bool ChessPiece::operator==(const ChessPiece &other) const{
     return this->pieceType == other.pieceType && this->player == other.player;
 }
-char ChessPiece::pieceChar(){
+char ChessPiece::pieceChar() const{
 
-    char c = 0;
-    if(this->player == kPlayerBlack){
-        c += 32; //Go from uppercase to lowercase
-    }
+    char c;
 
     switch(this->pieceType){
         case kPiecePawn:
-        default:
-        c += 'P';
+        c = 'P';
         break;
         case kPieceRook:
-        c += 'R';
+        c = 'R';
         break;
         case kPieceKnight:
-        c += 'N';
+        c = 'N';
         break;
         case kPieceBishop:
-        c += 'B';
+        c = 'B';
         break;
         case kPieceQueen:
-        c += 'Q';
+        c = 'Q';
         break;
         case kPieceKing:
-        c += 'K';
+        c = 'K';
         break;
+        case kPieceNone:
+        default:
+        c = 'X';
+        break;
+    }
+
+    if(this->player == kPlayerBlack){
+        c += 32; //Go from uppercase to lowercase
     }
 
     return c;

@@ -12,8 +12,8 @@ struct ChessPos{
 
     ChessPos(char col = 'a', char row = 1);
 
-    bool isInBounds();
-    std::string str();
+    bool isInBounds() const;
+    std::string str() const;
 
     bool operator==(const ChessPos &other) const;
 };
@@ -25,14 +25,13 @@ struct ChessPosHash{
 struct ChessMove{
     ChessPos pos;
     ChessPos newPos;
-    ChessPiece promotion;
+    ChessPiece piece, capture;
+    bool isCastling;
+    
+    ChessMove(ChessPiece piece = ChessPiece(), ChessPos pos = ChessPos(), ChessPos newPos = ChessPos());
 
-    ChessMove(ChessPos pos = ChessPos(), ChessPos newPos = ChessPos(), ChessPiece promotion = ChessPiece());
-
-    bool isInBounds();
-
-    //bool check_move_validity(ChessBoard &board);
-    std::string basicStr();
+    bool isInBounds() const;
+    std::string basicStr() const;
 };
 
 #endif

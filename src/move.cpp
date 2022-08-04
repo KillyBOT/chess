@@ -15,11 +15,11 @@ bool ChessPos::operator==(const ChessPos &other) const {
     return (this->row == other.row && this->col == other.col);
 }
 
-bool ChessPos::isInBounds(){
+bool ChessPos::isInBounds() const{
     return this->col >= 'a' && this->col <= 'h' && this->row >= 1 && this->row <= 8;
 }
 
-string ChessPos::str(){
+string ChessPos::str() const{
     string str;
     str += this->col;
     str += this->row  + '0';
@@ -33,16 +33,21 @@ std::size_t ChessPosHash::operator() (const ChessPos &pos) const {
     return hash;
 }
 
-ChessMove::ChessMove(ChessPos pos, ChessPos newPos, ChessPiece promotion){
+ChessMove::ChessMove(ChessPiece piece, ChessPos pos, ChessPos newPos){
     this->pos = pos;
     this->newPos = newPos;
-    this->promotion = promotion;
+    this->piece = piece;
+    this->capture = ChessPiece();
+    this->isCastling = false;
 }
 
-bool ChessMove::isInBounds(){
-    return (this->pos.isInBounds() && this->newPos.isInBounds());
+//Theoretically, you should never have a situation where the old pos is never out of bounds
+bool ChessMove::isInBounds() const {
+    return this->newPos.isInBounds();
 }
 
-string ChessMove::basicStr(){
-    return this->pos.str() + ' ' + this->newPos.str();
+string ChessMove::basicStr() const {
+    string str;
+    str = this->piece.pieceChar();
+    return str + " " + this->pos.str() + " " + this->newPos.str();
 }

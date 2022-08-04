@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <cstdlib>
+#include <chrono>
 #include <ctime>
 
 #include "mcts.h"
@@ -11,53 +12,42 @@ using std::unordered_map;
 using std::vector;
 using std::pair;
 
-MCTSNode::MCTSNode(){
-    this->val = ChessBoard();
-    this->parent = ChessBoard();
-    this->children = vector<ChessBoard>();
-    this->sims = 0;
-    this->wins = 0;
-}
+double sqrt2 = sqrt(2);
+
 MCTSNode::MCTSNode(ChessBoard val, ChessBoard parent){
     this->val = val;
     this->parent = parent;
-    this->children = vector<ChessBoard>();
     this->sims = 0;
     this->wins = 0;
-
-    for(ChessMove move : val.getPossibleMoves()){
-        ChessBoard child = ChessBoard(val);
-        child.doMove(move);
-        this->children.push_back(child);
-    }
 }
 
 double MCTSNode::calcUCT(double parentSims){
-    return ((double)this->wins / (double)this->sims) + sqrt(2) * sqrt(log(parentSims) / (double)this->sims);
+    //std::cout << this->wins << ' ' << this->sims << ' ' << parentSims << std::endl;
+    return ((double)this->wins / (double)this->sims) + sqrt2 * sqrt(log(parentSims) / (double)this->sims);
 }
 
 ChessBoard MCTS::select(ChessBoard root){
     double UCT;
-    double highestVal = 0;
-    ChessBoard best = root;
-    for(ChessBoard child : this->tree_[root].children){
+    double highestVal = -1;
+    ChessBoard best;
+    for(ChessBoard child : this->getChildren(root)){
         if(this->tree_.count(child)){
-            MCTSNode node = this->tree_[child];
-            UCT = node.calcUCT(this->tree_[root].sims);
+            UCT = this->tree_[child].calcUCT(this->tree_[root].sims);
             if(UCT > highestVal) {
-                best = node.val;
+                best = ChessBoard(child);
                 highestVal = UCT;
             }
+        } else {
+            return root;
         }
     }
 
-    if(best == root) return root;
-    else return select(best);
+    return select(best);
 }
 
 //Create a new child
 ChessBoard MCTS::expand(ChessBoard leaf) {
-    for(ChessBoard child : this->tree_[leaf].children){
+    for(ChessBoard child : this->getChildren(leaf)){
         if(!this->tree_.count(child)){
             this->tree_.insert(pair<ChessBoard,MCTSNode>(child,MCTSNode(child, leaf)));
             return child;
@@ -67,33 +57,39 @@ ChessBoard MCTS::expand(ChessBoard leaf) {
 
 }
 //Select a random child, and do the simulation
-int MCTS::simulate(ChessBoard leaf) {
+Player MCTS::simulate(ChessBoard leaf) {
 
     vector<ChessMove> moves;
 
-    for(int i = 0; i < this->maxSimDepth_; i++){
-        if(leaf.hasWon(kPlayerWhite)) return 1;
-        else if(leaf.hasWon(kPlayerBlack)) return -1;
+    while (true){
+        if(leaf.hasWon(kPlayerWhite)) return kPlayerWhite;
+        else if(leaf.hasWon(kPlayerBlack)) return kPlayerBlack;
+        else if(leaf.stalemate()) return kPlayerNone;
         moves = leaf.getPossibleMoves();
         leaf.doMove(moves[rand() % moves.size()]);
     }
 
-    return 0;
+    return kPlayerNone;
 }
-void MCTS::backpropogate(ChessBoard leaf, ChessBoard root, int win){
+void MCTS::backpropogate(ChessBoard leaf, ChessBoard root, Player win){
 
-    if((win == 1 && leaf.currentPlayer() == kPlayerWhite) || (win == -1 && leaf.currentPlayer() == kPlayerBlack)) this->tree_[leaf].wins++;
+    if(win == kPlayerNone) this->tree_[leaf].wins++;
+    else if(leaf.currentPlayer() == win) this->tree_[leaf].wins+=2;
     this->tree_[leaf].sims++;
     
     if(!(leaf == root)) backpropogate(this->tree_[leaf].parent, root, win);
 }
 
-MCTS::MCTS(int times, int maxSimDepth){
+MCTS::MCTS(int times) : ChessAI("Monte Carlo Tree Search"){
     this->times_ = times;
-    this->maxSimDepth_ = maxSimDepth;
 }
 
-ChessMove MCTS::findOptimalPath(ChessBoard board){
+ChessMove MCTS::findOptimalMove(ChessBoard board){
+
+    using std::chrono::duration_cast;
+    using std::chrono::milliseconds;
+    using std::chrono::seconds;
+    using std::chrono::system_clock;
 
     srand(time(NULL));
 
@@ -106,15 +102,22 @@ ChessMove MCTS::findOptimalPath(ChessBoard board){
         this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
     }
 
+    auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
     for(int x = 0; x < this->times_; x++){
-        //std::cout << "Selecting..." << std::endl;
+        std::cout << "Selecting..." << std::endl;
         ChessBoard leaf = this->select(board);
-        //std::cout << "Expanding..." << std::endl;
+        std::cout << "Expanding..." << std::endl;
         ChessBoard child = this->expand(leaf);
-        //std::cout << "Simulating and doing backprop..." << std::endl;
-        this->backpropogate(child, board, this->simulate(child));
-        //std::cout << "Finished round " << x << std::endl;
+        std::cout << "Simulating..." << std::endl;
+        Player winner = this->simulate(child);
+        std::cout << "Doing backprop..." << std::endl;
+        this->backpropogate(child, board, winner);
+        //std::cout << "Finished round " << x+1 << std::endl;
     }
+
+    auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    std::cout << endTime - startTime << std::endl;
 
     //This does redundant work, but whatever
     for(ChessMove move : board.getPossibleMoves()){

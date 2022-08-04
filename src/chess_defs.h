@@ -10,7 +10,8 @@ namespace chess_defs{
 
     enum Player {
         kPlayerWhite,
-        kPlayerBlack
+        kPlayerBlack,
+        kPlayerNone
     };
 
     enum PieceType {
@@ -19,10 +20,20 @@ namespace chess_defs{
         kPieceKnight,
         kPieceBishop,
         kPieceQueen,
-        kPieceKing
+        kPieceKing,
+        kPieceNone
     };
 
-    const std::array<int, 6> kPieceValue = {1, 5, 3, 3, 9, 0};
+    enum BoardState {
+        kStateNone,
+        kStateWhiteWin,
+        kStateBlackWin,
+        kStateWhiteInCheck,
+        kStateBlackInCheck,
+        kStateStalemate
+    };
+
+    const std::array<int, 7> kPieceValue = {1, 5, 3, 3, 9, 0, 0};
 }
 
 #endif

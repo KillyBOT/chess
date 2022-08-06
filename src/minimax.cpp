@@ -94,6 +94,7 @@ ChessMove Minimax::findOptimalMove(ChessBoard board){
     int score;
     int bestScore = -2147483647;
     ChessMove bestMove;
+
     for(ChessBoard child : this->getChildren(board)){
 
         if(this->doABPruining_) score = evalHelpAB(child, this->depth_, -2147483647, 2147483647, maxPlayer);

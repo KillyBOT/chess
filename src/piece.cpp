@@ -7,16 +7,17 @@ using namespace std;
 ChessPiece::ChessPiece(PieceType pieceType, Player player){
     this->pieceType = pieceType;
     this->player = player;
-    this->hasMoved = false;
+    this->moveNum = 0;
 }
 ChessPiece::ChessPiece(const ChessPiece &piece){
     this->pieceType = piece.pieceType;
     this->player = piece.player;
+    this->moveNum = piece.moveNum;
 }
 bool ChessPiece::operator==(const ChessPiece &other) const{
     return this->pieceType == other.pieceType && this->player == other.player;
 }
-char ChessPiece::pieceChar() const{
+char ChessPiece::pieceChar(bool usePlayer) const{
 
     char c;
 
@@ -45,7 +46,7 @@ char ChessPiece::pieceChar() const{
         break;
     }
 
-    if(this->player == kPlayerBlack){
+    if(usePlayer && this->player == kPlayerBlack){
         c += 32; //Go from uppercase to lowercase
     }
 

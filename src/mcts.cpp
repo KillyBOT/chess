@@ -105,13 +105,13 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
     auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
     for(int x = 0; x < this->times_; x++){
-        std::cout << "Selecting..." << std::endl;
+        //std::cout << "Selecting..." << std::endl;
         ChessBoard leaf = this->select(board);
-        std::cout << "Expanding..." << std::endl;
+        //std::cout << "Expanding..." << std::endl;
         ChessBoard child = this->expand(leaf);
-        std::cout << "Simulating..." << std::endl;
+        //std::cout << "Simulating..." << std::endl;
         Player winner = this->simulate(child);
-        std::cout << "Doing backprop..." << std::endl;
+        //std::cout << "Doing backprop..." << std::endl;
         this->backpropogate(child, board, winner);
         //std::cout << "Finished round " << x+1 << std::endl;
     }

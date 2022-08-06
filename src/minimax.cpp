@@ -53,6 +53,9 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth, Player maxPlayer){
     return val;
 }
 int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, Player maxPlayer){
+
+    //std::cout << depth << std::endl;
+
     if(depth <= 0 || board.state() == kStateWhiteWin || board.state() == kStateBlackWin || board.state() == kStateStalemate) return this->boardScore(board, maxPlayer);
 
     int val;
@@ -106,7 +109,7 @@ ChessMove Minimax::findOptimalMove(ChessBoard board){
         }
     }
 
-    std::cout << this->boardScores_.size() << std::endl;
+    //std::cout << this->boardScores_.size() << std::endl;
 
     return bestMove;
 }

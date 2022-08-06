@@ -50,7 +50,7 @@ std::size_t ChessPosHash::operator() (const ChessPos &pos) const {
     return ((pos.row << 8) | pos.col) << 8;
 }
 
-std::vector<ChessPos> positions_in_ray(ChessPos start, char dRow, char dCol){
+std::vector<ChessPos> positions_in_ray(ChessPos start, char dCol, char dRow){
     std::vector<ChessPos> positions;
 
     start.col += dCol;

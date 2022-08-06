@@ -9,10 +9,18 @@
 static const array<PieceType, 4> kPossiblePromotions = {kPieceRook, kPieceBishop, kPieceKnight, kPieceQueen};
 static const array<array<Player, 2>, 2> players = {kPlayerWhite,kPlayerBlack, kPlayerBlack, kPlayerWhite};
 
-void rotateDir(char &col, char &row){
+void rotate_dir(char &col, char &row){
     char tmp = col;
     col = -row;
     row = tmp;
+}
+Player opposite_player(Player player){
+    if(player == kPlayerWhite) return kPlayerBlack;
+    else if(player == kPlayerBlack) return kPlayerWhite;
+
+    //you shouldn't ever see this
+
+    return player;
 }
 
 ChessBoard::ChessBoard(bool fill, bool recordMoves){
@@ -22,11 +30,11 @@ ChessBoard::ChessBoard(bool fill, bool recordMoves){
     this->whiteKingPos_ = ChessPos('a',-1);
     this->blackKingPos_ = ChessPos('a',-1);
 
-    for(char col = 'a'; col <= 'h'; col++){
-        for(char row = 1; row <= 8; row++){
-            this->attacked_.emplace(ChessPos(col,row),unordered_set<ChessPos,ChessPosHash>());
-        }
-    }
+    // for(char col = 'a'; col <= 'h'; col++){
+    //     for(char row = 1; row <= 8; row++){
+    //         this->attacked_.emplace(ChessPos(col,row),unordered_set<ChessPos,ChessPosHash>());
+    //     }
+    // }
 
     if(fill){
         this->addPiece(ChessPos('a',1), ChessPiece(kPieceRook, kPlayerWhite));
@@ -66,10 +74,14 @@ ChessBoard::ChessBoard(bool fill, bool recordMoves){
 ChessBoard::ChessBoard(const ChessBoard& oldBoard) {
 
     this->pieces_ = oldBoard.pieces_;
-    this->attacked_ = oldBoard.attacked_;
+    this->pinned_ = oldBoard.pinned_;
     this->moves_ = oldBoard.moves_;
     this->whiteKingPos_ = oldBoard.whiteKingPos_;
     this->blackKingPos_ = oldBoard.blackKingPos_;
+    this->attackedByWhite_ = oldBoard.attackedByWhite_;
+    this->attackedByBlack_ = oldBoard.attackedByBlack_;
+    this->whiteInCheck_ = oldBoard.whiteInCheck_;
+    this->blackInCheck_ = oldBoard.blackInCheck_;
     this->hash_ = oldBoard.hash_;
     this->state_ = oldBoard.state_;
 }
@@ -104,16 +116,16 @@ bool ChessBoard::hasPieceAtPos(ChessPos pos) const{
     return this->pieces_.count(pos);
 }
 ChessPiece ChessBoard::pieceAtPos(ChessPos pos) const {
-    if(this->pieces_.count(pos)) return this->pieces_.at(pos);
+    if(pos.isInBounds() && this->pieces_.count(pos)) return this->pieces_.at(pos);
     return ChessPiece();
 }
 Player ChessBoard::playerAtPos(ChessPos pos) const{
     if(pos.isInBounds() && this->hasPieceAtPos(pos)) return this->pieces_.at(pos).player;
     return kPlayerNone;
 }
-bool ChessBoard::hasThreats(ChessPos pos) const {
-    return !this->attacked_.at(pos).empty();
-}
+// bool ChessBoard::hasThreats(ChessPos pos) const {
+//     return !this->attacked_.at(pos).empty();
+// }
 
 int ChessBoard::playerScore(Player player) const{
     int whiteScore = 0;
@@ -152,8 +164,7 @@ bool ChessBoard::inCheck(Player player) const{
 
 }
 bool ChessBoard::hasWon(Player player) const{
-    Player other = (player == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
-    if(!this->getMovesForPlayer(other).size()) return true;
+    if(this->getMovesForPlayer(opposite_player(player)).empty()) return true;
     return false;
 }
 bool ChessBoard::stalemate() const{
@@ -242,15 +253,25 @@ void ChessBoard::setKingPos(){
 }
 
 void ChessBoard::resetAttacked() {
-    for(char col = 'a'; col <= 'h'; col++){
-        for(char row = 1; row <= 8; row++){
-            this->attacked_.at(ChessPos(col,row)).clear();
-        }
-    }
+    // for(char col = 'a'; col <= 'h'; col++){
+    //     for(char row = 1; row <= 8; row++){
+    //         this->attacked_.at(ChessPos(col,row)).clear();
+    //     }
+    // }
+    this->attackedByWhite_.clear();
+    this->attackedByBlack_.clear();
 
     for(auto pieceData : this->pieces_){
         this->addPieceAttacking(pieceData.first);
     }
+}
+void ChessBoard::resetAttackedForPlayer(Player player){
+    if(player == kPlayerWhite) this->attackedByWhite_.clear();
+    else this->attackedByBlack_.clear();
+    for(auto pieceData : this->pieces_){
+        if(pieceData.second.player == player) this->addPieceAttacking(pieceData.first);
+    }
+    
 }
 void ChessBoard::setPinned() {
 
@@ -287,8 +308,8 @@ void ChessBoard::setPinned() {
             ) this->pinned_.insert(piecePositions[0].first);
         }
 
-        rotateDir(dCol, dRow);
-        rotateDir(dCol1, dRow1);
+        rotate_dir(dCol, dRow);
+        rotate_dir(dCol1, dRow1);
     }
 
 }
@@ -327,7 +348,10 @@ void ChessBoard::printBoard() const{
     }
     cout << endl;
     cout << (this->currentPlayer() == kPlayerWhite ? "White" : "Black") << "\'s turn" << endl;
-    cout << endl;
+    cout << this->currentTurnNum() << ": ";
+    if(this->moves_.size()) cout << this->lastMove().str();
+    cout << endl << endl;
+
 
     // for(ChessMove move : getPossibleMoves()){
     //     cout << move.basicStr() << endl;
@@ -338,7 +362,6 @@ void ChessBoard::printAttacked() const {
     using std::endl;
 
     ChessPos pos = ChessPos('a',8);
-    bool attackedByBlack, attackedByWhite;
     char printChar;
 
     // for(auto iter : this->attacked_) {
@@ -346,23 +369,22 @@ void ChessBoard::printAttacked() const {
     // }
     // cout << endl;
 
+    bool squareAttackedByWhite, squareAttackedByBlack;
+
     for(int row = 8; row > 0; row--){ //Do 8..0 instead of 7..-1 because I need to print row
         pos.col = 'a';
         cout << (int)pos.row << ' ';
         for(int col = 0; col < 8; col++){
             //cout << pos.str() << ' ' << this->attacked_.count(pos) << endl;
-            if(!this->attacked_.at(pos).empty()){
-                attackedByBlack = false;
-                attackedByWhite = false;
-                for(const ChessPos &threat : this->attacked_.at(pos)){
-                    //cout << pos.str () << ' ' << attacking.str() << endl;
-                    if(!attackedByWhite && this->pieces_.at(threat).player == kPlayerWhite) attackedByWhite = true;
-                    else if(!attackedByBlack && this->pieces_.at(threat).player == kPlayerBlack) attackedByBlack = true;
-                }
-                if(attackedByWhite && attackedByBlack) printChar = 'X';
-                else if(attackedByWhite) printChar = 'W';
-                else  printChar = 'B';
-                
+            squareAttackedByWhite = this->attackedByWhite_.count(pos);
+            squareAttackedByBlack = this->attackedByBlack_.count(pos);
+
+            if(squareAttackedByWhite && squareAttackedByBlack){
+                printChar = 'X';
+            } else if (squareAttackedByWhite) {
+                printChar = 'W';
+            } else if (squareAttackedByBlack) {
+                printChar = 'B';
             } else {
                 printChar = ((row + col) % 2 ? '#' : ' ');
             }
@@ -378,17 +400,17 @@ void ChessBoard::printAttacked() const {
     }
     cout << endl;
 }
-void ChessBoard::printAttackedDict() const {
-    using std::cout;
-    using std::endl;
-    for(auto iter : this->attacked_){
-        if(this->hasThreats(iter.first)){
-            cout << iter.first.str() << ": ";
-            for(ChessPos attackedBy : iter.second) cout << attackedBy.str() << ", ";
-            cout << std::endl;
-        }
-    }
-}
+// void ChessBoard::printAttackedDict() const {
+//     using std::cout;
+//     using std::endl;
+//     for(auto iter : this->attacked_){
+//         if(this->hasThreats(iter.first)){
+//             cout << iter.first.str() << ": ";
+//             for(ChessPos attackedBy : iter.second) cout << attackedBy.str() << ", ";
+//             cout << std::endl;
+//         }
+//     }
+// }
 void ChessBoard::printMoves() const {
     using std::cout;
     using std::endl;
@@ -420,11 +442,17 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece){
         else this->blackKingPos_ = pos;
     }
 
-    unordered_set<ChessPos, ChessPosHash> attacking = this->getAttackedByPiece(pos);
-    if(attacking.count(this->whiteKingPos_)) this->whiteInCheck_ = true;
-    else if(attacking.count(this->blackKingPos_)) this->blackInCheck_ = true;
-
     this->setPinned();
+    this->resetAttacked();
+    this->whiteInCheck_ = false;
+    this->blackInCheck_ = false;
+    if(this->attackedByBlack_.count(this->whiteKingPos_)) whiteInCheck_ = true;
+    if(this->attackedByWhite_.count(this->blackKingPos_)) blackInCheck_ = true;
+
+    this->updateState();
+
+    //this->printBoard();
+    //this->printAttacked();
 }
 void ChessBoard::removePiece(ChessPos pos){
     //std::cout << "Removing piece at " << pos.str() << std::endl;
@@ -444,6 +472,21 @@ vector<pair<ChessPos,ChessPiece>> ChessBoard::piecesInDir(ChessPos start, char d
 
     return pieces;
 }
+ChessPosSet ChessBoard::untilFirstInDir(ChessPos start, char dCol, char dRow, bool countFirst) const {
+    ChessPosSet positions;
+    start.col += dCol;
+    start.row += dRow;
+
+    while(start.isInBounds() && !this->hasPieceAtPos(start)){
+        positions.insert(start);
+        start.col += dCol;
+        start.row += dRow;
+    }
+
+    if(start.isInBounds() && countFirst) positions.insert(start);
+
+    return positions;
+}  
 bool ChessBoard::willMoveCapture(ChessMove &move) const{
     if(hasPieceAtPos(move.newPos) && this->pieces_.at(move.pos).player != this->pieces_.at(move.newPos).player){
         move.capture = this->pieces_.at(move.newPos);
@@ -451,7 +494,7 @@ bool ChessBoard::willMoveCapture(ChessMove &move) const{
     }
     return false;
 }
-void ChessBoard::addPosInDir(unordered_set<ChessPos, ChessPosHash> &positions, ChessPos pos, char dCol, char dRow) const {
+void ChessBoard::addPosInDir(ChessPosSet &positions, ChessPos pos, char dCol, char dRow) const {
     ChessPos newPos = ChessPos(pos);
     newPos.col += dCol;
     newPos.row += dRow;
@@ -461,7 +504,8 @@ void ChessBoard::addPosInDir(unordered_set<ChessPos, ChessPosHash> &positions, C
         newPos.row += dRow;
     }
 
-    if(newPos.isInBounds() && this->pieces_.at(newPos).player != this->pieces_.at(pos).player)  positions.insert(newPos);
+    //if(newPos.isInBounds() && this->pieces_.at(newPos).player != this->pieces_.at(pos).player)  positions.insert(newPos);
+    if(newPos.isInBounds()) positions.insert(newPos);
 }
 //Add all the moves in the direction specified by dCol and dRow
 void ChessBoard::addMovesInDir(vector<ChessMove> &moves, ChessPiece piece, ChessPos startPos, char dCol, char dRow) const{
@@ -477,8 +521,8 @@ void ChessBoard::addMovesInDir(vector<ChessMove> &moves, ChessPiece piece, Chess
 }
 
 //Get all spots attacked by a piece at pos
-unordered_set<ChessPos, ChessPosHash> ChessBoard::getAttackedByPiece(ChessPos pos) const{
-    unordered_set<ChessPos, ChessPosHash> positions;
+ChessPosSet ChessBoard::getAttackedByPiece(ChessPos pos) const{
+    ChessPosSet positions;
 
     if(!this->pieces_.count(pos)){
         return positions;
@@ -614,6 +658,9 @@ unordered_set<ChessPos, ChessPosHash> ChessBoard::getAttackedByPiece(ChessPos po
 }
 vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
     vector<ChessMove> moves;
+
+    //If pinned, can't do any moves
+    if(this->pinned_.count(pos)) return moves;
     
     char dRow, dRow1, dCol, dCol1, tmp;
 
@@ -659,7 +706,8 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
                 if((piece.player == kPlayerWhite && move.newPos.row == 8) || (piece.player == kPlayerBlack && move.newPos.row == 1)){
                     for(PieceType promotionType : kPossiblePromotions){
                         newMove = ChessMove(piece, move.pos, move.newPos);
-                        newMove.isPromoting = true;                    
+                        newMove.isPromoting = true;     
+                        newMove.piece.pieceType = promotionType;               
                         moves.push_back(ChessMove(piece, move.pos, move.newPos));
                     }
 
@@ -680,9 +728,8 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
         for(int x = 0; x < 4; x++){
             addMovesInDir(moves, piece, pos, dCol, dRow);
             
-            tmp = dRow;
-            dRow = -dCol;
-            dCol = tmp;
+            rotate_dir(dCol, dRow);
+
         }
 
         break;
@@ -693,9 +740,8 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
         for(int x = 0; x < 4; x++){
             addMovesInDir(moves, piece, pos, dCol, dRow);
             
-            tmp = dRow;
-            dRow = -dCol;
-            dCol = tmp;
+            rotate_dir(dCol, dRow);
+
         }
         break;
 
@@ -710,13 +756,8 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
             addMovesInDir(moves, piece, pos, dCol, dRow);
             addMovesInDir(moves, piece, pos, dCol1, dRow1);
             
-            tmp = dRow;
-            dRow = -dCol;
-            dCol = tmp;
-
-            tmp = dRow1;
-            dRow1 = -dCol1;
-            dCol1 = tmp;
+            rotate_dir(dCol, dRow);
+            rotate_dir(dCol1, dRow1);
         }
 
         break;
@@ -735,9 +776,7 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
             //if(this->pieces_.count(newMove.newPos)) std::cout << this->pieces_[newMove.newPos].pieceChar() <<std::endl;
             if(newMove.isInBounds() && (!hasPieceAtPos(newMove.newPos) || willMoveCapture(newMove))) moves.push_back(newMove);
             
-            tmp = dRow;
-            dRow = -dCol;
-            dCol = tmp;
+            rotate_dir(dCol, dRow);
         }
 
         break;
@@ -749,18 +788,32 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
         dRow1 = 1;
         dCol1 = 0;
 
+        ChessBoard newBoard = *this;
+        newBoard.removePiece(pos);
+        newBoard.resetAttacked();
+
         for(int x = 0; x < 4; x++){
             newMove = ChessMove(piece, pos, ChessPos(pos.col + dCol,pos.row + dRow));
-            if(newMove.isInBounds() && (!hasPieceAtPos(newMove.newPos) || willMoveCapture(newMove))) moves.push_back(newMove);
+            if(
+                newMove.isInBounds() 
+                && (!this->hasPieceAtPos(newMove.newPos) || this->willMoveCapture(newMove))
+                && (
+                    (piece.player == kPlayerWhite && !newBoard.attackedByBlack_.count(newMove.newPos)) 
+                    || (piece.player == kPlayerBlack && !newBoard.attackedByWhite_.count(newMove.newPos))
+                )
+            ) moves.push_back(newMove);
             newMove = ChessMove(piece, pos, ChessPos(pos.col + dCol1,pos.row + dRow1));
-            if(newMove.isInBounds() && (!hasPieceAtPos(newMove.newPos) || willMoveCapture(newMove))) moves.push_back(newMove);
-            
-            tmp = dRow;
-            dRow = -dCol;
-            dCol = tmp;
-            tmp = dRow1;
-            dRow1 = -dCol1;
-            dCol1 = tmp;
+            if(
+                newMove.isInBounds() 
+                && (!this->hasPieceAtPos(newMove.newPos) || this->willMoveCapture(newMove))
+                && (
+                    (piece.player == kPlayerWhite && !newBoard.attackedByBlack_.count(newMove.newPos)) 
+                    || (piece.player == kPlayerBlack && !newBoard.attackedByWhite_.count(newMove.newPos))
+                )
+            ) moves.push_back(newMove);
+
+            rotate_dir(dCol, dRow);
+            rotate_dir(dCol1, dRow1);
         }
 
         //Check if you can castle
@@ -797,8 +850,8 @@ vector<ChessMove> ChessBoard::getMovesForPiece(ChessPos pos) const{
 
     return moves;
 }
-unordered_set<ChessPos, ChessPosHash> ChessBoard::attackedByPlayer(Player player) const {
-    unordered_set<ChessPos, ChessPosHash> attacked;
+ChessPosSet ChessBoard::attackedByPlayer(Player player) const {
+    ChessPosSet attacked;
 
     for(auto iter : this->pieces_){
         if(iter.second.player == player){
@@ -808,12 +861,99 @@ unordered_set<ChessPos, ChessPosHash> ChessBoard::attackedByPlayer(Player player
 
     return attacked;
 }
+//If nothing is returned, then assume that there is more than one threat, and therefore no move could block both pieces
+unordered_set<ChessPos,ChessPosHash> ChessBoard::forcedNewPositions(Player player) const {
+
+    ChessPosSet forced;
+
+    char dCol, dRow, dCol1, dRow1, tmp;
+    bool foundAttacker;
+    vector<pair<ChessPos,ChessPiece>> piecePositions;
+    ChessPos kingPos = this->kingPos(player);
+    Player other = opposite_player(player);
+    ChessPiece piece;
+
+    dCol = 1;
+    dRow = 0;
+    dCol1 = 1;
+    dRow1 = 1;
+    foundAttacker = false;
+
+    //First, do pawn checks because they're really annoying
+    ChessPos pawnPos = kingPos;
+    pawnPos.col--;
+    pawnPos.row++;
+    if(player == kPlayerBlack) pawnPos.row -= 2;
+    
+    piece = this->pieceAtPos(pawnPos);
+    if(piece.player == other && piece.pieceType == kPiecePawn){
+        foundAttacker = true;
+        forced.insert(pawnPos);
+    }
+
+    pawnPos.col += 2;
+    piece = this->pieceAtPos(pawnPos);
+    if(piece.player == other && piece.pieceType == kPiecePawn){
+        if(foundAttacker){
+            forced.clear();
+            return forced;
+        } else {
+            foundAttacker = true;
+            forced.insert(pawnPos);
+        }
+    }
+
+    for(int i = 0; i < 4; i++){
+
+        piecePositions = this->piecesInDir(kingPos,dCol,dRow);
+        if(
+            !piecePositions.empty()
+            && piecePositions[0].second.player == other
+            && (piecePositions[0].second.pieceType == kPieceQueen || piecePositions[0].second.pieceType == kPieceRook)
+        ) {
+            if(!foundAttacker){
+                foundAttacker = true;
+                forced = untilFirstInDir(kingPos, dCol, dRow);
+            } else { //If you've already found a threat, then don't return anything
+                forced.clear();
+                return forced;
+            }
+        }
+
+
+        piecePositions = this->piecesInDir(kingPos,dCol1,dRow1);
+        if(
+            !piecePositions.empty()
+            && piecePositions[0].second.player == other
+            && (piecePositions[0].second.pieceType == kPieceQueen || piecePositions[0].second.pieceType == kPieceBishop)
+        ) {
+            if(!foundAttacker){
+                foundAttacker = true;
+                forced = untilFirstInDir(kingPos, dCol1, dRow1);
+            } else { //If you've already found a threat, then don't return anything
+                forced.clear();
+                return forced;
+            }
+        }
+
+        rotate_dir(dCol, dRow);
+        rotate_dir(dCol1, dRow1);
+    }
+
+    return forced;
+}
 
 void ChessBoard::addPieceAttacking(ChessPos pos){
     //std::cout << "Adding attacks from position " << pos.str() << std::endl;
-    for(ChessPos attackedPos : this->getAttackedByPiece(pos)) this->attacked_.at(attackedPos).emplace(pos);
+    //for(ChessPos attackedPos : this->getAttackedByPiece(pos)) this->attacked_.at(attackedPos).emplace(pos);
+
+    if(this->pieceAtPos(pos).player == kPlayerWhite){
+        for(ChessPos attackedPos : this->getAttackedByPiece(pos)) this->attackedByWhite_.insert(attackedPos);
+    } else {
+        for(ChessPos attackedPos : this->getAttackedByPiece(pos)) this->attackedByBlack_.insert(attackedPos);
+    }
 }
-void ChessBoard::removePieceAttacking(ChessPos pos) {
+/*void ChessBoard::removePieceAttacking(ChessPos pos) {
     //std::cout << "Removing attacks from position " << pos.str() << std::endl;
     ChessPos attacked = ChessPos('a',1);
     for(int col = 0; col < 8; col++){
@@ -843,7 +983,7 @@ void ChessBoard::updatePieceAttacking(ChessPos pos){
     //this->printAttackedBy(kPlayerWhite);
     //this->printAttackedBy(kPlayerBlack);
 }
-
+*/
 vector<ChessMove> ChessBoard::getMovesForPlayer(Player player) const{
     vector<ChessMove> moves, filteredMoves;
 
@@ -853,16 +993,29 @@ vector<ChessMove> ChessBoard::getMovesForPlayer(Player player) const{
             moves.insert(moves.end(), movesToAdd.begin(), movesToAdd.end());
         }
     }
-    
-    ChessBoard newBoard = ChessBoard(*this);
-    for(ChessMove move : moves){
-        //std::cout << move.str() << std::endl;
-        newBoard.doMove(move, false);
-        //newBoard.printBoard();
-        if(!newBoard.inCheck(player)) filteredMoves.push_back(move);
-        newBoard.undoMove(move, false);
-        //newBoard.printBoard();
+
+    if(player == kPlayerWhite && this->whiteInCheck_){
+        ChessPosSet forced = this->forcedNewPositions(kPlayerWhite);
+        for(ChessMove move : moves){
+            if(forced.count(move.newPos) || move.piece.pieceType == kPieceKing) filteredMoves.push_back(move);
+        }
+    }  else if (player == kPlayerBlack && this->blackInCheck_){
+        ChessPosSet forced = this->forcedNewPositions(kPlayerBlack);
+        for(ChessMove move : moves){
+            if(forced.count(move.newPos) || move.piece.pieceType == kPieceKing ) filteredMoves.push_back(move);
+        }
     }
+    else filteredMoves = moves;
+    
+    // ChessBoard newBoard = ChessBoard(*this);
+    // for(ChessMove move : moves){
+    //     //std::cout << move.str() << std::endl;
+    //     newBoard.doMove(move, false);
+    //     //newBoard.printBoard();
+    //     if(!newBoard.inCheck(player)) filteredMoves.push_back(move);
+    //     newBoard.undoMove(move, false);
+    //     //newBoard.printBoard();
+    // }
 
     return filteredMoves;
 }
@@ -894,14 +1047,14 @@ void ChessBoard::doMove(ChessMove move, bool updateHash){
     this->pieces_[move.newPos].moveNum++; //I set this later so that the previous check works
     this->moves_.push_back(move);
 
-    unordered_set<ChessPos, ChessPosHash> attacking = this->getAttackedByPiece(move.newPos);
-    if(attacking.count(this->whiteKingPos_)) this->whiteInCheck_ = true;
-    else if(attacking.count(this->blackInCheck_)) this->blackInCheck_ = true;
+    // ChessPosSet attacking = this->getAttackedByPiece(move.newPos);
+    // if(attacking.count(this->whiteKingPos_)) this->whiteInCheck_ = true;
+    // else if(attacking.count(this->blackInCheck_)) this->blackInCheck_ = true;
 
-    unordered_set<ChessPos, ChessPosHash> attacks = this->attacked_.at(move.pos);
-    for(const ChessPos &attackedBy : attacks){
-        this->updatePieceAttacking(attackedBy);
-    }
+    // ChessPosSet attacks = this->attacked_.at(move.pos);
+    // for(const ChessPos &attackedBy : attacks){
+    //     this->updatePieceAttacking(attackedBy);
+    // }
 
     if(updateHash) this->updateHash();
 

@@ -18,16 +18,18 @@ string ChessAI::name() const{
 }
 
 vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
+    //board.printBoard();
     if(!this->boardChildren_.count(board)){
         vector<ChessBoard> children;
         for(ChessMove move : board.getPossibleMoves()){
             ChessBoard child = ChessBoard(board);
             child.doMove(move);
+            //child.printBoard();
             children.push_back(child);
         }
 
         this->boardChildren_.insert(pair<ChessBoard,vector<ChessBoard>>(board,children));
     }
 
-    return this->boardChildren_[board];
+    return this->boardChildren_.at(board);
 }

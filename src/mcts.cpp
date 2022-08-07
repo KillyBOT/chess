@@ -7,6 +7,7 @@
 #include <ctime>
 
 #include "mcts.h"
+#include "move_generator.h"
 
 using std::unordered_map;
 using std::vector;
@@ -60,12 +61,13 @@ ChessBoard MCTS::expand(ChessBoard leaf) {
 Player MCTS::simulate(ChessBoard leaf) {
 
     vector<ChessMove> moves;
+    MoveGenerator mg;
 
     while (true){
-        if(leaf.hasWon(kPlayerWhite)) return kPlayerWhite;
-        else if(leaf.hasWon(kPlayerBlack)) return kPlayerBlack;
-        else if(leaf.stalemate()) return kPlayerNone;
-        moves = leaf.getPossibleMoves();
+        mg.setBoard(leaf);
+        if(mg.hasLost()) return leaf.opponent();
+        else if(mg.stalemate()) return kPlayerNone;
+        moves = mg.getMoves();
         leaf.doMove(moves[rand() % moves.size()]);
     }
 
@@ -74,7 +76,7 @@ Player MCTS::simulate(ChessBoard leaf) {
 void MCTS::backpropogate(ChessBoard leaf, ChessBoard root, Player win){
 
     if(win == kPlayerNone) this->tree_[leaf].wins++;
-    else if(leaf.currentPlayer() == win) this->tree_[leaf].wins+=2;
+    else if(leaf.player() == win) this->tree_[leaf].wins+=2;
     this->tree_[leaf].sims++;
     
     if(!(leaf == root)) backpropogate(this->tree_[leaf].parent, root, win);
@@ -120,7 +122,8 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
     std::cout << endTime - startTime << std::endl;
 
     //This does redundant work, but whatever
-    for(ChessMove move : board.getPossibleMoves()){
+    MoveGenerator mg = MoveGenerator(board);
+    for(ChessMove move : mg.getMoves()){
         ChessBoard newBoard = ChessBoard(board);
         newBoard.doMove(move);
         if(this->tree_.count(newBoard) && this->tree_[newBoard].sims > maxSims){

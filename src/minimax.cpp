@@ -1,24 +1,24 @@
 #include <iostream>
 
 #include "minimax.h"
+#include "move_generator.h"
 #include "board.h"
 
 using std::pair;
 using std::vector;
 
-int heuristic_basic(ChessBoard &board, Player player) {
+int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 
-    Player other = (player == kPlayerBlack) ? kPlayerWhite : kPlayerBlack;
+    MoveGenerator mg = MoveGenerator(board);
+    Player other = (maxPlayer == kPlayerBlack) ? kPlayerWhite : kPlayerBlack;
     int score = 0;
 
-    if(board.state() == kStateWhiteWin) score = 100;
-    else if(board.state() == kStateBlackWin) score = -100;
-    else if(board.state() == kStateBlackInCheck) score = 50;
-    else if(board.state() == kStateWhiteInCheck) score = -50;
+    if(mg.hasLost()) score -= 1000;
+    else if(mg.inCheck()) score -= 100;
+    
+    if(board.player() != maxPlayer) score *= -1;
 
-    if(player == kPlayerBlack) score *= -1;
-
-    score += board.playerScore(player) - board.playerScore(other);
+    score += board.playerScore(maxPlayer) - board.playerScore(other);
 
     return score;
 }
@@ -32,11 +32,11 @@ int Minimax::boardScore(ChessBoard &board, Player player){
 
 int Minimax::evalHelpMinimax(ChessBoard &board, int depth, Player maxPlayer){
 
-    if(depth <= 0 || board.state() == kStateWhiteWin || board.state() == kStateBlackWin) return this->boardScore(board, maxPlayer);
+    if(depth <= 0 || this->getChildren(board).empty()) return this->boardScore(board, maxPlayer);
 
     int val;
 
-    if(board.currentPlayer() == maxPlayer){
+    if(board.player() == maxPlayer){
 
         val = -2147483647;
 
@@ -56,11 +56,11 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, Playe
 
     //std::cout << depth << std::endl;
 
-    if(depth <= 0 || board.state() == kStateWhiteWin || board.state() == kStateBlackWin || board.state() == kStateStalemate) return this->boardScore(board, maxPlayer);
+    if(depth <= 0 || this->getChildren(board).empty()) return this->boardScore(board, maxPlayer);
 
     int val;
 
-    if(board.currentPlayer() == maxPlayer){
+    if(board.player() == maxPlayer){
 
         val = -2147483647;
 
@@ -93,7 +93,7 @@ Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABP
 
 ChessMove Minimax::findOptimalMove(ChessBoard board){
 
-    Player maxPlayer = board.currentPlayer();
+    Player maxPlayer = board.player();
     int score;
     int bestScore = -2147483647;
     ChessMove bestMove;

@@ -4,6 +4,7 @@
 
 #include "chess_ai.h"
 #include "board.h"
+#include "move_generator.h"
 
 using std::unordered_map;
 using std::vector;
@@ -17,11 +18,13 @@ string ChessAI::name() const{
     return this->name_;
 }
 
-vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
+const vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
     //board.printBoard();
+    this->mg_.setBoard(board);
+
     if(!this->boardChildren_.count(board)){
         vector<ChessBoard> children;
-        for(ChessMove move : board.getPossibleMoves()){
+        for(ChessMove move : this->mg_.getMoves(board)){
             ChessBoard child = ChessBoard(board);
             child.doMove(move);
             //child.printBoard();

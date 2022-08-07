@@ -18,7 +18,7 @@ bool ChessPos::operator==(const ChessPos &other) const {
     return (this->row == other.row && this->col == other.col);
 }
 
-bool ChessPos::isInBounds() const {
+inline bool ChessPos::isInBounds() const {
     return this->col >= 'a' && this->col <= 'h' && this->row >= 1 && this->row <= 8;
 }
 

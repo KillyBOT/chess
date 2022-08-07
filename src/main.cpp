@@ -42,26 +42,26 @@ int main(){
 
     ChessBoard board = ChessBoard();
     board.printBoard();
-    srand(time(NULL));
+    // srand(time(NULL));
 
-    vector<ChessMove> moves;
-    MCTS mcts = MCTS(50);
-    Minimax minimax = Minimax(heuristic_basic, 3, true);
+    // vector<ChessMove> moves;
+    // MCTS mcts = MCTS(50);
+    // Minimax minimax = Minimax(heuristic_basic, 3, true);
     
-    while(!board.hasWon(kPlayerWhite) && !board.hasWon(kPlayerBlack)){
-        board.doMove(mcts.findOptimalMove(board));
-        //board.doMove(minimax.findOptimalMove(board));
-        //moves = board.getPossibleMoves();
-        //board.doMove(moves[rand() % moves.size()]);
-        board.printBoard();
+    // while(!board.hasWon(kPlayerWhite) && !board.hasWon(kPlayerBlack)){
+    //     board.doMove(mcts.findOptimalMove(board));
+    //     //board.doMove(minimax.findOptimalMove(board));
+    //     //moves = board.getPossibleMoves();
+    //     //board.doMove(moves[rand() % moves.size()]);
+    //     board.printBoard();
 
-        if(board.state() == kStateWhiteWin || board.state() == kStateBlackWin || board.state() == kStateStalemate) break;
+    //     if(board.state() == kStateWhiteWin || board.state() == kStateBlackWin || board.state() == kStateStalemate) break;
 
-        moves = board.getPossibleMoves();
-        board.doMove(moves[rand() % moves.size()]);
-        board.printBoard();
+    //     moves = board.getPossibleMoves();
+    //     board.doMove(moves[rand() % moves.size()]);
+    //     board.printBoard();
         
-    }
+    // }
 
     return 0;
 }

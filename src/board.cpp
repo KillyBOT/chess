@@ -6,7 +6,7 @@
 
 #include "board.h"
 
-ChessBoard::ChessBoard(bool fill, bool recordMoves){
+ChessBoard::ChessBoard(bool fill){
 
     using std::pair;
 
@@ -53,29 +53,33 @@ ChessBoard::ChessBoard(const ChessBoard& oldBoard) {
 bool ChessBoard::operator==(const ChessBoard& other) const{
     return this->pieces_ == other.pieces_;
 }
+bool ChessBoard::operator!=(const ChessBoard &other) const {
+    return this->pieces_ != other.pieces_;
+}
 
-inline int ChessBoard::turnNum() const{
+int ChessBoard::turnNum() const{
     return (this->moves_.size() >> 1) + 1;
 }
-inline Player ChessBoard::player() const {
+Player ChessBoard::player() const {
+    if(this->moves_.empty()) return kPlayerWhite;
     return (this->moves_.size() & 1) ? kPlayerBlack : kPlayerWhite;
 }
-inline Player ChessBoard::opponent() const {
+Player ChessBoard::opponent() const {
     return(this->player() == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
 }
-inline const ChessMove &ChessBoard::lastMove() const {
+ChessMove ChessBoard::lastMove() const {
     return this->moves_.back();
 }
-inline bool ChessBoard::hasPiece(ChessPos pos) const {
+bool ChessBoard::hasPiece(ChessPos pos) const {
     return this->pieces_.count(pos);
 }
-inline const ChessPiece &ChessBoard::piece(ChessPos pos) const {
+const ChessPiece &ChessBoard::piece(ChessPos pos) const {
     return this->pieces_.at(pos);
 }
-inline const unordered_map<ChessPos, ChessPiece, ChessPosHash> &ChessBoard::pieces() const {
+const unordered_map<ChessPos, ChessPiece, ChessPosHash> &ChessBoard::pieces() const {
     return this->pieces_;
 }
-inline const vector<ChessMove> &ChessBoard::moves() const {
+const vector<ChessMove> &ChessBoard::moves() const {
     return this->moves_;
 }
 
@@ -148,10 +152,12 @@ void ChessBoard::printBoard() const{
         cout << col;
     }
     cout << endl;
-    cout << (this->player() == kPlayerWhite ? "White" : "Black") << "\'s turn" << endl;
-    cout << this->turnNum() << ": ";
-    if(this->moves_.size()) cout << this->lastMove().str();
-    cout << endl << endl;
+    if(!this->moves_.empty()){
+        if(this->lastMove().piece.player == kPlayerWhite) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
+        else cout << this->turnNum()-1 << ": " << this->moves_[this->moves_.size()-2].str() << ' ' << this->moves_[this->moves_.size()-1].str() << endl;
+    }
+
+    cout << endl;
 
 
     // for(ChessMove move : getPossibleMoves()){
@@ -219,8 +225,7 @@ void ChessBoard::printMoves() const {
     using std::endl;
     for(int turn = 1; turn < this->turnNum(); turn++) cout << turn << ": " << this->moves_.at((turn-1) * 2).str() << ' ' << this->moves_.at(((turn-1) * 2) + 1).str() << endl;
 
-    cout << this->turnNum() << ": " << endl;
-    if(this->lastMove().piece.player == kPlayerWhite) cout << this->lastMove().str() << endl;
+    if(this->lastMove().piece.player == kPlayerWhite) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
 }
 
 void ChessBoard::addPiece(ChessPos pos, ChessPiece piece){
@@ -305,8 +310,12 @@ void ChessBoard::undoMove(ChessMove move, bool updateHash){
     }
 
     this->moves_.pop_back();
+    this->moves_.pop_back();
 
     if(updateHash) this->updateHash();
+}
+void ChessBoard::undoLastMove(bool updateHash){
+    this->undoMove(this->moves_.back(), updateHash);
 }
 
 std::size_t ChessBoardHash::operator()(ChessBoard const& board) const {

@@ -33,16 +33,17 @@ class ChessBoard {
 
     public:
 
-    ChessBoard(bool fill = true, bool recordMoves = false);
+    ChessBoard(bool fill = true);
     ChessBoard(vector<ChessMove> moves);
     ChessBoard(const ChessBoard &oldBoard);
     bool operator==(const ChessBoard &other) const;
+    bool operator!=(const ChessBoard &other) const;
 
     int turnNum() const;
     Player player() const;
     Player opponent() const;
     int playerScore(Player player) const;
-    const ChessMove &lastMove() const;
+    ChessMove lastMove() const;
     bool hasPiece(ChessPos pos) const;
     const ChessPiece &piece(ChessPos pos) const;
     const unordered_map<ChessPos, ChessPiece, ChessPosHash> &pieces() const;
@@ -60,7 +61,7 @@ class ChessBoard {
     //vector<ChessMove> getPossibleMoves() const;
     void doMove(ChessMove move, bool updateHash = true);
     void undoMove(ChessMove move, bool updateHash = true);
-    void undoLastMove();
+    void undoLastMove(bool updateHash = true);
 
 };
 

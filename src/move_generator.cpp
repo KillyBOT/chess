@@ -38,7 +38,7 @@ ChessPosSet MoveGenerator::untilFirstInDir(ChessPos start, char dCol, char dRow,
     start.col += dCol;
     start.row += dRow;
 
-    while(start.isInBounds() && (!this->board_.hasPiece(start))){
+    while(start.isInBounds() && !this->board_.hasPiece(start)){
         positions.insert(start);
         start.col += dCol;
         start.row += dRow;
@@ -50,24 +50,23 @@ ChessPosSet MoveGenerator::untilFirstInDir(ChessPos start, char dCol, char dRow,
 }  
 //This function is pretty simple, but it also sets the move's capture value, so it's pretty useful
 bool MoveGenerator::willMoveCapture(ChessMove &move) const{
-    if(this->board_.hasPiece(move.newPos) && this->board_.piece(move.newPos).player == this->opponent_){
+    if(this->board_.piece(move.newPos).player == this->opponent_){
         move.capture = this->board_.piece(move.newPos);
         return true;
     }
     return false;
 }
 void MoveGenerator::addAttacksInDir(ChessPos pos, char dCol, char dRow) {
-    ChessPos newPos = ChessPos(pos);
-    newPos.col += dCol;
-    newPos.row += dRow;
-    while(newPos.isInBounds() && (!this->board_.hasPiece(newPos) || this->board_.piece(newPos).player == this->opponent_ && this->board_.piece(newPos).pieceType == kPieceKing)){
-        this->attacked_.insert(newPos);
-        newPos.col += dCol;
-        newPos.row += dRow;
+    pos.col += dCol;
+    pos.row += dRow;
+    while(pos.isInBounds() && (!this->board_.hasPiece(pos) || this->board_.piece(pos).player == this->player_ && this->board_.piece(pos).pieceType == kPieceKing)){
+        this->attacked_.insert(pos);
+        pos.col += dCol;
+        pos.row += dRow;
     }
 
     //if(newPos.isInBounds() && this->pieces_.at(newPos).player != this->pieces_.at(pos).player)  positions.insert(newPos);
-    if(newPos.isInBounds()) this->attacked_.insert(newPos);
+    if(pos.isInBounds()) this->attacked_.insert(pos);
 }
 //Add all the moves in the direction specified by dCol and dRow
 void MoveGenerator::addMovesInDir(vector<ChessMove> &moves, ChessPiece piece, ChessPos startPos, char dCol, char dRow) const{
@@ -168,11 +167,11 @@ void MoveGenerator::addPieceAttacks(ChessPos pos, ChessPiece piece){
         for(int x = 0; x < 4; x++){
             newPos = ChessPos(pos.col + dCol, pos.row + dRow);
             //std::cout << newMove.newPos.str() << std::endl;
-            if(newPos.isInBounds() && (!this->board_.hasPiece(newPos) || this->board_.piece(newPos).player == this->player_)) this->attacked_.insert(newPos);
+            if(newPos.isInBounds()) this->attacked_.insert(newPos);
             newPos = ChessPos(pos.col + dRow, pos.row + dCol);
             //std::cout << newMove.newPos.str() << std::endl;
             //if(this->pieces_.count(newMove.newPos)) std::cout << this->pieces_[newMove.newPos].pieceChar() <<std::endl;
-            if(newPos.isInBounds() && (!this->board_.hasPiece(newPos) || this->board_.piece(newPos).player == this->player_))  this->attacked_.insert(newPos);
+            if(newPos.isInBounds())  this->attacked_.insert(newPos);
             
             tmp = dRow;
             dRow = -dCol;
@@ -190,9 +189,9 @@ void MoveGenerator::addPieceAttacks(ChessPos pos, ChessPiece piece){
 
         for(int x = 0; x < 4; x++){
             newPos = ChessPos(pos.col + dCol,pos.row + dRow);
-            if(newPos.isInBounds() && (!this->board_.hasPiece(newPos) || this->board_.piece(newPos).player == this->player_)) this->attacked_.insert(newPos);
+            if(newPos.isInBounds()) this->attacked_.insert(newPos);
             newPos = ChessPos(pos.col + dCol1, pos.row + dRow1);
-            if(newPos.isInBounds() && (!this->board_.hasPiece(newPos) || this->board_.piece(newPos).player == this->player_)) this->attacked_.insert(newPos);
+            if(newPos.isInBounds()) this->attacked_.insert(newPos);
             
             tmp = dRow;
             dRow = -dCol;
@@ -211,7 +210,7 @@ void MoveGenerator::addPieceAttacks(ChessPos pos, ChessPiece piece){
     // }
     // std::cout << std::endl;
 }
-vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos) const{
+vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) const{
     vector<ChessMove> moves;
 
     //If pinned, can't do any moves
@@ -221,7 +220,6 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos) const{
 
     ChessMove newMove;
     bool doCheck = false;
-    ChessPiece piece = this->board_.piece(pos);
 
     vector<ChessMove> movesToAdd; //Goddamn pawns making us have to declare a whole new vector
 
@@ -240,7 +238,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos) const{
                 
                 newMove = ChessMove(piece, pos, ChessPos(pos.col + dCol, pos.row + dRow));
 
-                if(newMove.isInBounds() && willMoveCapture(newMove)){
+                if(newMove.isInBounds() && this->board_.hasPiece(newMove.newPos) && willMoveCapture(newMove)){
                     movesToAdd.push_back(newMove);
                 }
             }
@@ -372,6 +370,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos) const{
                 && !this->board_.hasPiece(ChessPos('b',row)) 
                 && !this->board_.hasPiece(ChessPos('c',row)) 
                 && !this->board_.hasPiece(ChessPos('d',row))
+                && !this->attacked_.count(ChessPos('b',row))
             ) {
                 newMove = ChessMove(piece, pos, ChessPos('b',row));
                 newMove.isCastling = true;
@@ -383,6 +382,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos) const{
                 && !this->board_.piece(ChessPos('h',row)).moveNum 
                 && !this->board_.hasPiece(ChessPos('g',row)) 
                 && !this->board_.hasPiece(ChessPos('f',row)) 
+                && !this->attacked_.count(ChessPos('g',row))
             ){ 
                 newMove = ChessMove(piece, pos, ChessPos('g',row));
                 newMove.isCastling = true;
@@ -475,38 +475,6 @@ ChessPosSet MoveGenerator::forcedPositions() const {
 
     return forced;
 }
-
-/*void ChessBoard::removePieceAttacking(ChessPos pos) {
-    //std::cout << "Removing attacks from position " << pos.str() << std::endl;
-    ChessPos attacked = ChessPos('a',1);
-    for(int col = 0; col < 8; col++){
-        attacked.row = 1;
-        for(int row = 0; row < 8; row++){
-            this->attacked_.at(attacked).erase(pos);
-            attacked.row++;
-        }
-        attacked.col++;
-    }
-}
-void ChessBoard::updatePieceAttacking(ChessPos pos){
-
-    //this->printAttackedBy(kPlayerWhite);
-    //this->printAttackedBy(kPlayerBlack);
-
-    // for(ChessPos attackedBy : this->attacked_.at(pos)){
-    //     std::cout << attackedBy.str_int() << ", ";
-    // }
-    // std::cout << std::endl;
-    //std::cout << pos.isInBounds() << std::endl;
-    this->removePieceAttacking(pos);
-    //std::cout << "Successfully removed" << std::endl;
-    this->addPieceAttacking(pos);
-    //std::cout << "Successfully added" << std::endl;
-
-    //this->printAttackedBy(kPlayerWhite);
-    //this->printAttackedBy(kPlayerBlack);
-}
-*/
 void MoveGenerator::setAttacked() {
     // for(char col = 'a'; col <= 'h'; col++){
     //     for(char row = 1; row <= 8; row++){
@@ -557,6 +525,9 @@ void MoveGenerator::setPinned() {
 
 }
 
+MoveGenerator::MoveGenerator(){
+    this->setBoard(ChessBoard(false));
+}
 MoveGenerator::MoveGenerator(ChessBoard board){
     this->setBoard(board);
 }
@@ -565,8 +536,8 @@ void MoveGenerator::setBoard(ChessBoard board){
     this->board_ = board;
     this->player_ = this->board_.player();
     this->opponent_ = this->board_.opponent();
-    this->setKingPos();
 
+    this->setKingPos();
     this->setAttacked();
     this->setPinned();
 }
@@ -582,7 +553,7 @@ bool MoveGenerator::inCheck(ChessBoard board) {
 }
 
 bool MoveGenerator::hasLost() const {
-    return (this->inCheck() && this->getMoves().empty());
+    return this->getMoves().empty();
 }
 
 bool MoveGenerator::hasLost(ChessBoard board) {
@@ -614,21 +585,30 @@ bool MoveGenerator::stalemate(ChessBoard board) {
 
     return this->stalemate();
 }
+
+const ChessPosSet &MoveGenerator::pinned() const {
+    return this->pinned_;
+}
+ChessPosSet MoveGenerator::forced() const {
+    return this->forcedPositions();
+}
+
 vector<ChessMove> MoveGenerator::getMoves() const{
 
     vector<ChessMove> moves, filteredMoves;
 
     for(auto iter : this->board_.pieces()){
         if(iter.second.player == this->player_){
-            vector<ChessMove> movesToAdd = this->pieceMoves(iter.first);
+            vector<ChessMove> movesToAdd = this->pieceMoves(iter.first, iter.second);
             moves.insert(moves.end(), movesToAdd.begin(), movesToAdd.end());
         }
     }
 
+
     if(this->inCheck()){
         ChessPosSet forced = this->forcedPositions();
         for(ChessMove move : moves){
-            if(move.piece.pieceType != kPieceKing && forced.count(move.newPos)) filteredMoves.push_back(move);
+            if(move.piece.pieceType == kPieceKing || forced.count(move.newPos)) filteredMoves.push_back(move);
         }
     }
     else filteredMoves = moves;
@@ -646,11 +626,10 @@ vector<ChessMove> MoveGenerator::getMoves() const{
     return filteredMoves;
 }
 
-static vector<ChessMove> getMoves(ChessBoard board){
-    MoveGenerator mg;
-    mg.setBoard(board);
+vector<ChessMove> MoveGenerator::getMoves(ChessBoard board){
+    this->setBoard(board);
 
-    return mg.getMoves();
+    return this->getMoves();
 }
 
 void MoveGenerator::printAttacked() const {

@@ -7,7 +7,7 @@
 using std::pair;
 using std::vector;
 
-int heuristic_basic(ChessBoard &board, Player maxPlayer) {
+int heuristic_basic(ChessBoard board, Player maxPlayer) {
 
     MoveGenerator mg = MoveGenerator(board);
     Player other = (maxPlayer == kPlayerBlack) ? kPlayerWhite : kPlayerBlack;
@@ -23,14 +23,14 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
     return score;
 }
 
-int Minimax::boardScore(ChessBoard &board, Player player){
+int Minimax::boardScore(ChessBoard board, Player player){
     if(!this->boardScores_.count(board)) this->boardScores_.insert(pair<ChessBoard,pair<int,int>>(board, pair<int,int>(this->heuristicFunc_(board, kPlayerWhite),this->heuristicFunc_(board, kPlayerBlack))));
 
     if(player == kPlayerWhite) return this->boardScores_[board].first;
     else return this->boardScores_[board].second;
 }
 
-int Minimax::evalHelpMinimax(ChessBoard &board, int depth, Player maxPlayer){
+int Minimax::evalHelpMinimax(ChessBoard board, int depth, Player maxPlayer){
 
     if(depth <= 0 || this->getChildren(board).empty()) return this->boardScore(board, maxPlayer);
 
@@ -52,7 +52,7 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth, Player maxPlayer){
 
     return val;
 }
-int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, Player maxPlayer){
+int Minimax::evalHelpAB(ChessBoard board, int depth, int alpha, int beta, Player maxPlayer){
 
     //std::cout << depth << std::endl;
 
@@ -85,7 +85,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, Playe
     return val;
 }
 
-Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning) : ChessAI("Minimax"){
+Minimax::Minimax(int(*heuristicFunc)(ChessBoard, Player), int depth, bool doABPruning) : ChessAI("Minimax"){
     this->heuristicFunc_ = heuristicFunc;
     this->depth_ = depth;
     this->doABPruining_ = doABPruning;
@@ -93,23 +93,25 @@ Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABP
 
 ChessMove Minimax::findOptimalMove(ChessBoard board){
 
-    Player maxPlayer = board.player();
     int score;
     int bestScore = -2147483647;
     ChessMove bestMove;
 
-    for(ChessBoard child : this->getChildren(board)){
+    //board.printBoard();
+    //std::cout << board.player() << std::endl;
 
-        if(this->doABPruining_) score = evalHelpAB(child, this->depth_, -2147483647, 2147483647, maxPlayer);
-        else score = evalHelpMinimax(child, this->depth_, maxPlayer);
+    for(ChessBoard child : this->getChildren(board)){
+        //std::cout << child.player() << std::endl;
+        //child.printBoard();
+
+        if(this->doABPruining_) score = evalHelpAB(child, this->depth_, -2147483647, 2147483647, board.player());
+        else score = evalHelpMinimax(child, this->depth_, board.player());
 
         if(score > bestScore){
             bestScore = score;
             bestMove = child.lastMove();
         }
     }
-
-    //std::cout << this->boardScores_.size() << std::endl;
 
     return bestMove;
 }

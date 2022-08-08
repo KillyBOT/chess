@@ -18,13 +18,13 @@ string ChessAI::name() const{
     return this->name_;
 }
 
-const vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
+vector<ChessBoard> ChessAI::getChildren(ChessBoard board){
     //board.printBoard();
-    this->mg_.setBoard(board);
 
     if(!this->boardChildren_.count(board)){
+        MoveGenerator mg = MoveGenerator(board);
         vector<ChessBoard> children;
-        for(ChessMove move : this->mg_.getMoves(board)){
+        for(ChessMove move : mg.getMoves()){
             ChessBoard child = ChessBoard(board);
             child.doMove(move);
             //child.printBoard();
@@ -35,4 +35,14 @@ const vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
     }
 
     return this->boardChildren_.at(board);
+    // vector<ChessBoard> children;
+    // MoveGenerator mg = MoveGenerator(board);
+
+    // for(ChessMove move : mg.getMoves()){
+    //     ChessBoard child = board;
+    //     child.doMove(move);
+    //     children.push_back(child);
+    // }
+
+    // return children;
 }

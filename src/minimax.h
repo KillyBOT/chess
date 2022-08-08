@@ -6,7 +6,7 @@
 #include "chess_ai.h"
 #include "board.h"
 
-int heuristic_basic(ChessBoard &board, Player maxPlayer);
+int heuristic_basic(ChessBoard board, Player maxPlayer);
 
 using std::unordered_map;
 using std::pair;
@@ -18,16 +18,16 @@ class Minimax : public ChessAI{
 
     int depth_;
     bool doABPruining_;
-    int (*heuristicFunc_)(ChessBoard&, Player);
+    int (*heuristicFunc_)(ChessBoard, Player);
 
-    int boardScore(ChessBoard &board, Player player);
+    int boardScore(ChessBoard board, Player player);
 
-    int evalHelpMinimax(ChessBoard &board, int depth, Player maxPlayer);
-    int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, Player maxPlayer);
+    int evalHelpMinimax(ChessBoard board, int depth, Player maxPlayer);
+    int evalHelpAB(ChessBoard board, int depth, int alpha, int beta, Player maxPlayer);
 
     public:
     
-    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_basic, int depth = 4, bool doABPruning = true);
+    Minimax(int(*heuristicFunc)(ChessBoard, Player) = heuristic_basic, int depth = 4, bool doABPruning = true);
     ChessMove findOptimalMove(ChessBoard board);
 
     bool setABPruning();

@@ -29,7 +29,7 @@ class MoveGenerator {
     bool willMoveCapture(ChessMove &move) const;
 
     void addPieceAttacks(ChessPos pos, ChessPiece piece);
-    vector<ChessMove> pieceMoves(ChessPos pos) const;
+    vector<ChessMove> pieceMoves(ChessPos pos, ChessPiece piece) const;
     ChessPosSet forcedPositions() const;
 
     void setKingPos();
@@ -48,6 +48,9 @@ class MoveGenerator {
     bool hasLost(ChessBoard board);
     bool stalemate() const;
     bool stalemate(ChessBoard board);
+
+    const ChessPosSet &pinned() const;
+    ChessPosSet forced() const;
 
     vector<ChessMove> getMoves() const;
     vector<ChessMove> getMoves(ChessBoard board);

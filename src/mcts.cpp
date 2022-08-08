@@ -35,7 +35,7 @@ ChessBoard MCTS::select(ChessBoard root){
         if(this->tree_.count(child)){
             UCT = this->tree_[child].calcUCT(this->tree_[root].sims);
             if(UCT > highestVal) {
-                best = ChessBoard(child);
+                best = child;
                 highestVal = UCT;
             }
         } else {
@@ -69,17 +69,25 @@ Player MCTS::simulate(ChessBoard leaf) {
         else if(mg.stalemate()) return kPlayerNone;
         moves = mg.getMoves();
         leaf.doMove(moves[rand() % moves.size()]);
+        //leaf = this->getChildren(leaf)[rand() % this->getChildren(leaf).size()];
     }
 
     return kPlayerNone;
 }
 void MCTS::backpropogate(ChessBoard leaf, ChessBoard root, Player win){
 
-    if(win == kPlayerNone) this->tree_[leaf].wins++;
-    else if(leaf.player() == win) this->tree_[leaf].wins+=2;
-    this->tree_[leaf].sims++;
+    while(leaf != this->tree_[leaf].parent){
+        //leaf.printBoard();
+        if(win == kPlayerNone) this->tree_[leaf].wins++;
+        else if(leaf.player() == win) this->tree_[leaf].wins+=2;
+        this->tree_[leaf].sims++;
+        leaf = this->tree_[leaf].parent;
+    }
+
+    if(win == kPlayerNone) this->tree_[root].wins++;
+    else if(leaf.player() == win) this->tree_[root].wins+=2;
+    this->tree_[root].sims++;
     
-    if(!(leaf == root)) backpropogate(this->tree_[leaf].parent, root, win);
 }
 
 MCTS::MCTS(int times) : ChessAI("Monte Carlo Tree Search"){
@@ -100,9 +108,11 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
     ChessMove retMove;
     int maxSims = 0;
 
-    if(!this->tree_.count(board)){
-        this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
-    }
+    // if(!this->tree_.count(board)){
+    //     this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
+    // }
+    this->tree_.clear();
+    this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board, board)));
 
     auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 

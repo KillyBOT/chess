@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstdlib>
 
 #include "board.h"
 
@@ -42,6 +43,7 @@ ChessBoard::ChessBoard(bool fill){
     }
 
     this->updateHash();
+    this->initZobrist();
 
 }
 ChessBoard::ChessBoard(const ChessBoard& oldBoard) {
@@ -55,6 +57,15 @@ bool ChessBoard::operator==(const ChessBoard& other) const{
 }
 bool ChessBoard::operator!=(const ChessBoard &other) const {
     return this->pieces_ != other.pieces_;
+}
+
+void ChessBoard::initZobrist() {
+    srand(43252003); //The first 8 digits of God's number (the number of possible permutations of a rubik's cube)
+    for(int i = 0; i < 64; i++){
+        for(int j = 0; j < 12; j++){
+
+        }
+    }
 }
 
 int ChessBoard::turnNum() const{
@@ -158,67 +169,7 @@ void ChessBoard::printBoard() const{
     }
 
     cout << endl;
-
-
-    // for(ChessMove move : getPossibleMoves()){
-    //     cout << move.basicStr() << endl;
-    // }
 }
-/*void ChessBoard::printAttacked() const {
-    using std::cout;
-    using std::endl;
-
-    ChessPos pos = ChessPos('a',8);
-    char printChar;
-
-    // for(auto iter : this->attacked_) {
-    //     cout << iter.first.str() << ", ";
-    // }
-    // cout << endl;
-
-    bool squareAttackedByWhite, squareAttackedByBlack;
-
-    for(int row = 8; row > 0; row--){ //Do 8..0 instead of 7..-1 because I need to print row
-        pos.col = 'a';
-        cout << (int)pos.row << ' ';
-        for(int col = 0; col < 8; col++){
-            //cout << pos.str() << ' ' << this->attacked_.count(pos) << endl;
-            squareAttackedByWhite = this->attackedByWhite_.count(pos);
-            squareAttackedByBlack = this->attackedByBlack_.count(pos);
-
-            if(squareAttackedByWhite && squareAttackedByBlack){
-                printChar = 'X';
-            } else if (squareAttackedByWhite) {
-                printChar = 'W';
-            } else if (squareAttackedByBlack) {
-                printChar = 'B';
-            } else {
-                printChar = ((row + col) % 2 ? '#' : ' ');
-            }
-            cout << printChar;
-            pos.col += 1;
-        }
-        cout << endl;
-        pos.row -= 1;
-    }
-    cout << "  ";
-    for(char col = 'a'; col <= 'h'; col++){
-        cout << col;
-    }
-    cout << endl;
-} */
-
-/*void ChessBoard::printAttackedDict() const {
-    using std::cout;
-    using std::endl;
-    for(auto iter : this->attacked_){
-        if(this->hasThreats(iter.first)){
-            cout << iter.first.str() << ": ";
-            for(ChessPos attackedBy : iter.second) cout << attackedBy.str() << ", ";
-            cout << std::endl;
-        }
-    }
-}*/
 
 void ChessBoard::printMoves() const {
     using std::cout;
@@ -231,29 +182,9 @@ void ChessBoard::printMoves() const {
 void ChessBoard::addPiece(ChessPos pos, ChessPiece piece){
     //std::cout << "Adding piece " << piece.pieceChar() << " at location " << pos.str() << std::endl;
     this->pieces_.insert(pair<ChessPos,ChessPiece>(pos,piece));
-
-    // unordered_set<ChessPos,ChessPosHash> attacks = this->attacked_.at(pos);
-
-    // //std::cout << "Updating attacked table" << std::endl;
-    // for(const ChessPos &threat : attacks){
-    //     //std::cout << "Updating " << attackedBy.str_int() << std::endl;
-    //     this->pieces_.at(pos).affecting.insert(threat);
-    //     this->pieces_.at(threat).affectedBy.insert(pos);
-    //     this->updatePieceAttacking(threat);
-    //     //std::cout << "Finished updating " << attackedBy.str_int() << std::endl;
-    // }
-    // //std::cout << "Updating complete" << std::endl;
-    // this->addPieceAttacking(pos);
-
-    //this->printBoard();
-    //this->printAttacked();
 }
 void ChessBoard::removePiece(ChessPos pos){
     //std::cout << "Removing piece at " << pos.str() << std::endl;
-    //this->removePieceAttacking(pos);
-    // for(const ChessPos &affected : this->pieces_.at(pos).affecting){
-    //     this->updatePieceAttacking(affected);   
-    // }
     this->pieces_.erase(pos);
 }
 
@@ -261,7 +192,18 @@ void ChessBoard::removePiece(ChessPos pos){
 void ChessBoard::doMove(ChessMove move, bool updateHash){
 
     //Actually do the move
-    if(move.capture.pieceType != kPieceNone) this->removePiece(move.newPos);
+    if(move.isEnPassant){
+        if(move.piece.player == kPlayerWhite){
+            move.newPos.row--;
+            this->removePiece(move.newPos);
+            move.newPos.row++;
+        } else {
+            move.newPos.row++;
+            this->removePiece(move.newPos);
+            move.newPos.row--;
+        }
+    }
+    else if(move.capture.pieceType != kPieceNone) this->removePiece(move.newPos);
     this->removePiece(move.pos);
     this->addPiece(move.newPos, move.piece);
 
@@ -295,21 +237,37 @@ void ChessBoard::undoMove(ChessMove move, bool updateHash){
         move.piece.pieceType = kPiecePawn;
     }
 
-    //TODO: add check for castling
     if(move.isCastling){
         if(move.newPos.col == 'b') this->undoMove(ChessMove(this->pieces_.at(ChessPos('c',move.newPos.row)),ChessPos('c',move.newPos.row),ChessPos('a',move.newPos.row)), false);
         else this->undoMove(ChessMove(this->pieces_.at(ChessPos('c',move.newPos.row)),ChessPos('c',move.newPos.row),ChessPos('a',move.newPos.row)), false);
         this->moves_.push_back(move);
     }
 
-    this->doMove(ChessMove(this->pieces_.at(move.newPos), move.newPos,move.pos), false);
-    this->pieces_.at(move.pos).moveNum -= 2;
-
-    if(move.capture.pieceType != kPieceNone){
-        this->addPiece(move.newPos, move.capture);
+    if(move.isEnPassant){
+        if(move.piece.player == kPlayerWhite){
+            move.newPos.row++;
+            this->addPiece(move.newPos, move.capture);
+            move.newPos.row--;
+        } else {
+            move.newPos.row--;
+            this->addPiece(move.newPos, move.capture);
+            move.newPos.row++;
+        }
+        this->removePiece(move.newPos);
+        move.piece.moveNum--;
+        this->addPiece(move.pos,move.piece);
+        
     }
+    else {
+        this->doMove(ChessMove(this->pieces_.at(move.newPos), move.newPos,move.pos), false);
+        this->pieces_.at(move.pos).moveNum -= 2;
 
-    this->moves_.pop_back();
+        if(move.capture.pieceType != kPieceNone){
+            this->addPiece(move.newPos, move.capture);
+        }
+
+        this->moves_.pop_back();
+    }
     this->moves_.pop_back();
 
     if(updateHash) this->updateHash();

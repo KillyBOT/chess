@@ -15,7 +15,7 @@ namespace chess_defs{
     };
 
     enum PieceType {
-        kPiecePawn,
+        kPiecePawn=1,
         kPieceRook,
         kPieceKnight,
         kPieceBishop,
@@ -33,7 +33,7 @@ namespace chess_defs{
         kStateStalemate
     };
 
-    const std::array<int, 7> kPieceValue = {1, 5, 3, 3, 9, 0, 0};
+    const std::array<int, 8> kPieceValue = {0, 1, 5, 3, 3, 9, 0, 0};
 }
 
 #endif

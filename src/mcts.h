@@ -15,18 +15,20 @@ struct MCTSNode{
     ChessBoard val;
     ChessBoard parent;
     int wins, sims;
+    bool isRoot;
 
     MCTSNode(ChessBoard val = ChessBoard(), ChessBoard parent = ChessBoard());
     double calcUCT(double parentSims);
 };
 class MCTS : public ChessAI{
-    unordered_map<ChessBoard, MCTSNode, ChessBoardHash> tree_;
+    unordered_map<ChessBoard, MCTSNode, ChessBoardHash> nodes_;
     int times_;
+    ChessBoard root_;
 
-    ChessBoard select(ChessBoard root);
-    ChessBoard expand(ChessBoard leaf);
+    ChessBoard select(ChessBoard &root);
+    ChessBoard expand(ChessBoard &leaf);
     Player simulate(ChessBoard leaf);
-    void backpropogate(ChessBoard leaf, ChessBoard root, Player win);
+    void backpropogate(ChessBoard &leaf, Player win);
 
     public:
     MCTS(int times = 100);

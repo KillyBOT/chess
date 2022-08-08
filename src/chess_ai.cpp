@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include "chess_ai.h"
 #include "board.h"
@@ -18,21 +19,22 @@ string ChessAI::name() const{
     return this->name_;
 }
 
-vector<ChessBoard> ChessAI::getChildren(ChessBoard board){
+vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
     //board.printBoard();
 
     if(!this->boardChildren_.count(board)){
-        MoveGenerator mg = MoveGenerator(board);
+        mg_.setBoard(board);
         vector<ChessBoard> children;
-        for(ChessMove move : mg.getMoves()){
-            ChessBoard child = ChessBoard(board);
-            child.doMove(move);
+        for(ChessMove move : mg_.getMoves()){
+            board.doMove(move);
             //child.printBoard();
-            children.push_back(child);
+            children.push_back(board);
+            board.undoLastMove();
         }
-
         this->boardChildren_.insert(pair<ChessBoard,vector<ChessBoard>>(board,children));
     }
+
+    //std::cout << this->boardChildren_.at(board).size() << std::endl;
 
     return this->boardChildren_.at(board);
     // vector<ChessBoard> children;

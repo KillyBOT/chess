@@ -20,6 +20,7 @@ MCTSNode::MCTSNode(ChessBoard val, ChessBoard parent){
     this->parent = parent;
     this->sims = 0;
     this->wins = 0;
+    this->isRoot = false;
 }
 
 double MCTSNode::calcUCT(double parentSims){
@@ -27,15 +28,16 @@ double MCTSNode::calcUCT(double parentSims){
     return ((double)this->wins / (double)this->sims) + sqrt2 * sqrt(log(parentSims) / (double)this->sims);
 }
 
-ChessBoard MCTS::select(ChessBoard root){
+ChessBoard MCTS::select(ChessBoard &root){
     double UCT;
     double highestVal = -1;
-    ChessBoard best;
-    for(ChessBoard child : this->getChildren(root)){
-        if(this->tree_.count(child)){
-            UCT = this->tree_[child].calcUCT(this->tree_[root].sims);
+    int best;
+    for(int i = 0; i < this->getChildren(root).size(); i++){
+        ChessBoard &child = this->getChildren(root)[i];
+        if(this->nodes_.count(child)){
+            UCT = this->nodes_[child].calcUCT(this->nodes_[root].sims);
             if(UCT > highestVal) {
-                best = child;
+                best = i;
                 highestVal = UCT;
             }
         } else {
@@ -43,14 +45,14 @@ ChessBoard MCTS::select(ChessBoard root){
         }
     }
 
-    return select(best);
+    return select(this->getChildren(root)[best]);
 }
 
 //Create a new child
-ChessBoard MCTS::expand(ChessBoard leaf) {
-    for(ChessBoard child : this->getChildren(leaf)){
-        if(!this->tree_.count(child)){
-            this->tree_.insert(pair<ChessBoard,MCTSNode>(child,MCTSNode(child, leaf)));
+ChessBoard MCTS::expand(ChessBoard &leaf) {
+    for(ChessBoard &child : this->getChildren(leaf)){
+        if(!this->nodes_.count(child)){
+            this->nodes_.insert(pair<ChessBoard,MCTSNode>(child,MCTSNode(child, leaf)));
             return child;
         }
     }
@@ -63,30 +65,25 @@ Player MCTS::simulate(ChessBoard leaf) {
     vector<ChessMove> moves;
     MoveGenerator mg;
 
+    srand(time(NULL));
     while (true){
         mg.setBoard(leaf);
-        if(mg.hasLost()) return leaf.opponent();
-        else if(mg.stalemate()) return kPlayerNone;
         moves = mg.getMoves();
+        if(moves.empty()) return leaf.opponent();
+        else if(mg.stalemate()) return kPlayerNone;
         leaf.doMove(moves[rand() % moves.size()]);
         //leaf = this->getChildren(leaf)[rand() % this->getChildren(leaf).size()];
     }
 
     return kPlayerNone;
 }
-void MCTS::backpropogate(ChessBoard leaf, ChessBoard root, Player win){
+void MCTS::backpropogate(ChessBoard &leaf, Player win){
 
-    while(leaf != this->tree_[leaf].parent){
-        //leaf.printBoard();
-        if(win == kPlayerNone) this->tree_[leaf].wins++;
-        else if(leaf.player() == win) this->tree_[leaf].wins+=2;
-        this->tree_[leaf].sims++;
-        leaf = this->tree_[leaf].parent;
-    }
-
-    if(win == kPlayerNone) this->tree_[root].wins++;
-    else if(leaf.player() == win) this->tree_[root].wins+=2;
-    this->tree_[root].sims++;
+    if(win == kPlayerNone) this->nodes_.at(leaf).wins++;
+    else if(win == leaf.player()) this->nodes_.at(leaf).wins += 2;
+    this->nodes_.at(leaf).sims++;
+    
+    if(!this->nodes_.at(leaf).isRoot) backpropogate(this->nodes_.at(leaf).parent, win);
     
 }
 
@@ -103,16 +100,16 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
 
     srand(time(NULL));
 
-    ChessBoard leaf;
-
     ChessMove retMove;
     int maxSims = 0;
 
-    // if(!this->tree_.count(board)){
-    //     this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
+    // if(!this->nodes_.count(board)){
+    //     this->nodes_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
     // }
-    this->tree_.clear();
-    this->tree_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board, board)));
+    this->root_ = board;
+    this->nodes_.clear();
+    this->nodes_.insert(pair<ChessBoard,MCTSNode>(this->root_,MCTSNode(this->root_, this->root_)));
+    this->nodes_.at(this->root_).isRoot = true;
 
     auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
@@ -124,7 +121,7 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
         //std::cout << "Simulating..." << std::endl;
         Player winner = this->simulate(child);
         //std::cout << "Doing backprop..." << std::endl;
-        this->backpropogate(child, board, winner);
+        this->backpropogate(child, winner);
         //std::cout << "Finished round " << x+1 << std::endl;
     }
 
@@ -132,13 +129,10 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
     std::cout << endTime - startTime << std::endl;
 
     //This does redundant work, but whatever
-    MoveGenerator mg = MoveGenerator(board);
-    for(ChessMove move : mg.getMoves()){
-        ChessBoard newBoard = ChessBoard(board);
-        newBoard.doMove(move);
-        if(this->tree_.count(newBoard) && this->tree_[newBoard].sims > maxSims){
-            retMove = move;
-            maxSims = this->tree_[newBoard].sims;
+    for(ChessBoard &child : this->getChildren(this->root_)){
+        if(this->nodes_.count(child) && this->nodes_[child].sims > maxSims){
+            retMove = child.lastMove();
+            maxSims = this->nodes_[child].sims;
         }
     }
     return retMove;

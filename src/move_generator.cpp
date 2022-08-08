@@ -49,8 +49,29 @@ ChessPosSet MoveGenerator::untilFirstInDir(ChessPos start, char dCol, char dRow,
     return positions;
 }  
 //This function is pretty simple, but it also sets the move's capture value, so it's pretty useful
+//It also checks for en passant (holy hell)
 bool MoveGenerator::willMoveCapture(ChessMove &move) const{
-    if(this->board_.piece(move.newPos).player == this->opponent_){
+    
+    if(move.piece.pieceType == kPiecePawn){
+        ChessPos pos = move.newPos;
+        if(this->player_ == kPlayerWhite) pos.row--;
+        else pos.row++;
+
+        if(
+            pos.isInBounds() &&
+            this->board_.hasPiece(pos) &&
+            this->board_.piece(pos).pieceType == kPiecePawn &&
+            this->board_.piece(pos).moveNum == 1 &&
+            this->board_.piece(pos).player == this->opponent_
+        ) {
+            move.capture = this->board_.piece(pos);
+            move.isEnPassant = true;
+
+            return enPassantCheck(move);
+        }
+    }
+
+    if(this->board_.hasPiece(move.newPos) && this->board_.piece(move.newPos).player == this->opponent_){
         move.capture = this->board_.piece(move.newPos);
         return true;
     }
@@ -238,9 +259,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) cons
                 
                 newMove = ChessMove(piece, pos, ChessPos(pos.col + dCol, pos.row + dRow));
 
-                if(newMove.isInBounds() && this->board_.hasPiece(newMove.newPos) && willMoveCapture(newMove)){
-                    movesToAdd.push_back(newMove);
-                }
+                if(newMove.isInBounds() && willMoveCapture(newMove)) movesToAdd.push_back(newMove);
             }
 
             newMove = ChessMove(piece, pos, ChessPos(pos.col, pos.row + dRow));
@@ -475,6 +494,18 @@ ChessPosSet MoveGenerator::forcedPositions() const {
 
     return forced;
 }
+bool MoveGenerator::enPassantCheck(ChessMove move) const {
+    ChessBoard newBoard = this->board_;
+
+    newBoard.doMove(move);
+    MoveGenerator mg(newBoard);
+    mg.player_ = this->player_;
+    mg.opponent_ = this->opponent_;
+    mg.setAttacked();
+
+    return !mg.inCheck();
+}
+
 void MoveGenerator::setAttacked() {
     // for(char col = 'a'; col <= 'h'; col++){
     //     for(char row = 1; row <= 8; row++){

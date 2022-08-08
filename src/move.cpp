@@ -15,6 +15,17 @@ ChessMove::ChessMove(ChessPiece piece, ChessPos pos, ChessPos newPos){
     this->capture = ChessPiece();
     this->isCastling = false;
     this->isPromoting = false;
+    this->isEnPassant = false;
+}
+
+ChessMove::ChessMove(const ChessMove &move){
+    this->pos = move.pos;
+    this->newPos = move.newPos;
+    this->piece = move.piece;
+    this->capture = move.capture;
+    this->isCastling = move.isCastling;
+    this->isPromoting = move.isPromoting;
+    this->isEnPassant = move.isEnPassant;
 }
 
 //Theoretically, you should never have a situation where the old pos is never out of bounds

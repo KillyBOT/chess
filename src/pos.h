@@ -8,7 +8,7 @@ struct ChessPos{
     char row, col;
 
     ChessPos(const ChessPos &pos);
-    ChessPos(char col = 'a', char row = 1);
+    ChessPos(char col = 'a', char row = 0);
 
     bool isInBounds() const;
     int asInt() const;

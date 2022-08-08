@@ -16,6 +16,7 @@ using std::string;
 using std::array;
 using std::unordered_map;
 using std::unordered_set;
+using std::size_t;
 
 using namespace chess_defs;
 
@@ -27,9 +28,14 @@ class ChessBoard {
 
     unordered_map<ChessPos, ChessPiece, ChessPosHash> pieces_;
     vector<ChessMove> moves_;
-    std::size_t hash_;
+    size_t hash_;
+    size_t zobristPieces_[64][12];
+    size_t zobristBlackToMove_;
+    size_t zobristCastlingRights[16];
+    size_t zobristEnPassantSquare[8];
 
     void updateHash();
+    void initZobrist();
 
     public:
 

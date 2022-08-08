@@ -17,17 +17,24 @@ int main(){
     MoveGenerator mg;
 
     // ChessBoard board = ChessBoard(false);
-    // // board.addPiece(ChessPos('a',1),ChessPiece(kPieceKing,kPlayerWhite));
-    // // board.addPiece(ChessPos('b',3),ChessPiece(kPieceQueen,kPlayerWhite));
-    // // board.addPiece(ChessPos('a',5),ChessPiece(kPieceRook,kPlayerBlack));
-    // // board.addPiece(ChessPos('a',6),ChessPiece(kPieceRook,kPlayerBlack));
-    // // board.addPiece(ChessPos('b',2),ChessPiece(kPiecePawn,kPlayerWhite));
-    // // board.addPiece(ChessPos('c',3),ChessPiece(kPieceBishop,kPlayerBlack));
-    // board.addPiece(ChessPos('a',1),ChessPiece(kPieceKing,kPlayerWhite));
-    // board.addPiece(ChessPos('h',1),ChessPiece(kPieceRook,kPlayerBlack));
-    // board.addPiece(ChessPos('h',2),ChessPiece(kPieceRook,kPlayerBlack));
+    // board.addPiece(ChessPos('c',2),ChessPiece(kPiecePawn,kPlayerWhite));
+    // board.addPiece(ChessPos('b',4),ChessPiece(kPiecePawn,kPlayerBlack));
+    // board.addPiece(ChessPos('a',4),ChessPiece(kPieceKing,kPlayerBlack));
+    // board.addPiece(ChessPos('h',4),ChessPiece(kPieceQueen,kPlayerWhite));
 
     // mg.setBoard(board);
+    // board.printBoard();
+
+    // vector<ChessMove> moves = mg.getMoves();
+    // for(ChessMove move : moves) cout << move.str() << endl;
+    // board.doMove(moves.back());
+    // board.printBoard();
+
+    // moves = mg.getMoves(board);
+    // for(ChessMove move : moves) cout << move.str() << endl;
+    // board.doMove(moves[0]);
+    // board.printBoard();
+    // board.undoLastMove();
     // board.printBoard();
 
     // mg.printAttacked();
@@ -53,20 +60,21 @@ int main(){
 
     vector<ChessMove> moves;
     MCTS mcts = MCTS(200);
-    Minimax minimax = Minimax(heuristic_basic, 3, true);
+    Minimax minimax = Minimax(heuristic_basic, 4, false);
     
     while(!mg.hasLost() && !mg.stalemate()){
-        //board.doMove(mcts.findOptimalMove(board));
-        board.doMove(minimax.findOptimalMove(board));
+        board.doMove(mcts.findOptimalMove(board));
+        //board.doMove(minimax.findOptimalMove(board));
         board.printBoard();
-        mg.setBoard(board);
-
         if(mg.hasLost() || mg.stalemate()) break;
+
+        mg.setBoard(board);
         moves = mg.getMoves(board);
         // for(ChessMove move : moves) cout << move.str() << ", ";
         // cout << endl;
         board.doMove(moves[rand() % moves.size()]);
         board.printBoard();
+
         mg.setBoard(board);
         
     }

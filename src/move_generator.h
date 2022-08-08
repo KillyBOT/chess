@@ -31,6 +31,7 @@ class MoveGenerator {
     void addPieceAttacks(ChessPos pos, ChessPiece piece);
     vector<ChessMove> pieceMoves(ChessPos pos, ChessPiece piece) const;
     ChessPosSet forcedPositions() const;
+    bool enPassantCheck(ChessMove move) const;
 
     void setKingPos();
     void setAttacked();

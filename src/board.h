@@ -24,18 +24,27 @@ using ChessPosSet = unordered_set<ChessPos, ChessPosHash>;
 
 class ChessBoard {
 
-    friend class ChessBoardHash;
+    //friend class ChessBoardHash;
 
     unordered_map<ChessPos, ChessPiece, ChessPosHash> pieces_;
     vector<ChessMove> moves_;
-    size_t hash_;
-    size_t zobristPieces_[64][12];
+    unordered_map<size_t, int> seenBoards_;
+    
+    //For use with the zobrist hash
+    //First bit is if there's an en passant file
+    //Second 3 bits are the en passant file
+    //Last 4 bits are the castling rights of the current board
+    vector<Byte> gameData_; 
+    vector<size_t> boardHashHistory_;
+    //size_t hash_;
+    array<array<size_t,12>,64> zobristPieces_;
     size_t zobristBlackToMove_;
-    size_t zobristCastlingRights[16];
-    size_t zobristEnPassantSquare[8];
+    array<size_t, 16> zobristCastlingRights_;
+    array<size_t, 8> zobristEnPassantFile_;
 
-    void updateHash();
-    void initZobrist();
+    //void updateHash();
+    void updateZobrist(ChessMove move);
+    void addBoardToSeen();
 
     public:
 
@@ -54,13 +63,16 @@ class ChessBoard {
     const ChessPiece &piece(ChessPos pos) const;
     const unordered_map<ChessPos, ChessPiece, ChessPosHash> &pieces() const;
     const vector<ChessMove> &moves() const;
-    std::size_t hash() const;
+    const size_t &zobristKey() const;
+    const unordered_map<size_t, int> &seenBoards() const;
+    //std::size_t hash() const;
 
     void printBoard() const;
     void printAttacked() const;
     //void printAttackedDict() const;
     void printMoves() const;
 
+    void resetZobrist();
     void addPiece(ChessPos pos, ChessPiece piece);
     void removePiece(ChessPos pos);
 

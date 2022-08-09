@@ -9,13 +9,13 @@ using Byte = unsigned char;
 namespace chess_defs{
 
     enum Player {
-        kPlayerWhite,
-        kPlayerBlack,
+        kPlayerWhite = 0,
+        kPlayerBlack = 1,
         kPlayerNone
     };
 
     enum PieceType {
-        kPiecePawn=1,
+        kPiecePawn=0,
         kPieceRook,
         kPieceKnight,
         kPieceBishop,
@@ -33,7 +33,7 @@ namespace chess_defs{
         kStateStalemate
     };
 
-    const std::array<int, 8> kPieceValue = {0, 1, 5, 3, 3, 9, 0, 0};
+    const std::array<int, 8> kPieceValue = {1, 5, 3, 3, 9, 0, 0};
 }
 
 #endif

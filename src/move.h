@@ -12,7 +12,11 @@ struct ChessMove{
     ChessPos pos;
     ChessPos newPos;
     ChessPiece piece, capture;
-    bool isCastling, isPromoting, isEnPassant;
+    bool isCastling : 1;
+    bool isPromoting: 1;
+    bool isEnPassant: 1;
+    bool isEnPassantEligible: 1;
+    bool castlingSide : 1; //False for queenside, true for kingside
     
     ChessMove(ChessPiece piece = ChessPiece(), ChessPos pos = ChessPos(), ChessPos newPos = ChessPos());
     ChessMove(const ChessMove &move);

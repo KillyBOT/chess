@@ -14,7 +14,7 @@ using std::string;
 
 class ChessAI {
     string name_;
-    unordered_map<ChessBoard,vector<ChessBoard>,ChessBoardHash> boardChildren_;
+    unordered_map<size_t, vector<ChessMove>> moveMap_;
     MoveGenerator mg_;
 
     public:
@@ -23,9 +23,9 @@ class ChessAI {
 
     string name() const;
 
-    vector<ChessBoard> &getChildren(ChessBoard &board);
+    const vector<ChessMove> &getMoves(ChessBoard &board);
 
-    virtual ChessMove findOptimalMove(ChessBoard board) = 0;
+    virtual ChessMove findOptimalMove(ChessBoard &board) = 0;
 
 };
 

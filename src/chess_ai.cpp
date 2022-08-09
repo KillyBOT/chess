@@ -19,32 +19,9 @@ string ChessAI::name() const{
     return this->name_;
 }
 
-vector<ChessBoard> &ChessAI::getChildren(ChessBoard &board){
-    //board.printBoard();
+const vector<ChessMove> &ChessAI::getMoves(ChessBoard &board){
 
-    if(!this->boardChildren_.count(board)){
-        mg_.setBoard(board);
-        vector<ChessBoard> children;
-        for(ChessMove move : mg_.getMoves()){
-            board.doMove(move);
-            //child.printBoard();
-            children.push_back(board);
-            board.undoLastMove();
-        }
-        this->boardChildren_.insert(pair<ChessBoard,vector<ChessBoard>>(board,children));
-    }
+    if(!this->moveMap_.count(board.zobristKey())) this->moveMap_.emplace(board.zobristKey(),this->mg_.getMoves(board));
 
-    //std::cout << this->boardChildren_.at(board).size() << std::endl;
-
-    return this->boardChildren_.at(board);
-    // vector<ChessBoard> children;
-    // MoveGenerator mg = MoveGenerator(board);
-
-    // for(ChessMove move : mg.getMoves()){
-    //     ChessBoard child = board;
-    //     child.doMove(move);
-    //     children.push_back(child);
-    // }
-
-    // return children;
+    return this->moveMap_.at(board.zobristKey());
 }

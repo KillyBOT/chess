@@ -271,6 +271,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) cons
             //Then, see if you can move two spaces
             if(doCheck && !piece.moveNum){
                 newMove = ChessMove(piece, pos, ChessPos(pos.col, pos.row + dRow*2));
+                newMove.isEnPassantEligible = true;
                 if(newMove.isInBounds() && !this->board_.hasPiece(newMove.newPos)) movesToAdd.push_back(newMove);
             }
 
@@ -379,7 +380,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) cons
         }
 
         //Check if you can castle
-        if(piece.moveNum == 0 && pos.col == 'e'){
+        if(!piece.moveNum && pos.col == 'e'){
             char row = (piece.player == kPlayerWhite) ? 1 : 8;
 
             //Queenside
@@ -393,6 +394,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) cons
             ) {
                 newMove = ChessMove(piece, pos, ChessPos('b',row));
                 newMove.isCastling = true;
+                newMove.castlingSide = false;
                 moves.push_back(newMove);
             }
             //Kingside
@@ -405,6 +407,7 @@ vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) cons
             ){ 
                 newMove = ChessMove(piece, pos, ChessPos('g',row));
                 newMove.isCastling = true;
+                newMove.castlingSide = true;
                 moves.push_back(newMove);
             }
         }
@@ -597,9 +600,11 @@ bool MoveGenerator::stalemate() const{
     bool noPiecesCaptured = true;
     vector<ChessMove> moves = this->board_.moves();
 
+    if(this->board_.seenBoards().count(this->board_.zobristKey()) && this->board_.seenBoards().at(this->board_.zobristKey()) >= 3) return true;
+
     if(moves.size() > 100){
         for(int i = 0; i < 100; i++){
-            if(moves[moves.size()-1-i].capture.pieceType != kPieceNone){
+            if(moves[moves.size()-1-i].capture.pieceType != kPieceNone || moves[moves.size()-1-i].piece.pieceType == kPiecePawn){
                 noPiecesCaptured = false;
                 break;
             }
@@ -627,6 +632,8 @@ ChessPosSet MoveGenerator::forced() const {
 vector<ChessMove> MoveGenerator::getMoves() const{
 
     vector<ChessMove> moves, filteredMoves;
+
+    if(this->stalemate()) return moves;
 
     for(auto iter : this->board_.pieces()){
         if(iter.second.player == this->player_){

@@ -12,12 +12,14 @@
 using std::unordered_map;
 using std::vector;
 using std::pair;
+using std::size_t;
 
 double sqrt2 = sqrt(2);
 
-MCTSNode::MCTSNode(ChessBoard val, ChessBoard parent){
+MCTSNode::MCTSNode(size_t val, Player player, size_t parent){
     this->val = val;
     this->parent = parent;
+    this->player = player;
     this->sims = 0;
     this->wins = 0;
     this->isRoot = false;
@@ -28,70 +30,85 @@ double MCTSNode::calcUCT(double parentSims){
     return ((double)this->wins / (double)this->sims) + sqrt2 * sqrt(log(parentSims) / (double)this->sims);
 }
 
-ChessBoard MCTS::select(ChessBoard &root){
+void MCTS::select(ChessBoard &root){
     double UCT;
     double highestVal = -1;
-    int best;
-    for(int i = 0; i < this->getChildren(root).size(); i++){
-        ChessBoard &child = this->getChildren(root)[i];
-        if(this->nodes_.count(child)){
-            UCT = this->nodes_[child].calcUCT(this->nodes_[root].sims);
+    ChessMove best;
+    for(ChessMove move : this->getMoves(root)){
+        root.doMove(move);
+
+        if(this->nodes_.count(root.zobristKey())){
+
+            UCT = this->nodes_.at(root.zobristKey()).calcUCT(this->nodes_.at(root.zobristKey()).sims);
+
             if(UCT > highestVal) {
-                best = i;
+                best = move;
                 highestVal = UCT;
             }
+
         } else {
-            return root;
+            return;
         }
+
+        root.undoLastMove();
     }
 
-    return select(this->getChildren(root)[best]);
+    root.doMove(best);
+    select(root);
 }
 
 //Create a new child
-ChessBoard MCTS::expand(ChessBoard &leaf) {
-    for(ChessBoard &child : this->getChildren(leaf)){
-        if(!this->nodes_.count(child)){
-            this->nodes_.insert(pair<ChessBoard,MCTSNode>(child,MCTSNode(child, leaf)));
-            return child;
+size_t MCTS::expand(ChessBoard &leaf) {
+    size_t parentKey = leaf.zobristKey();
+    for(ChessMove move : this->getMoves(leaf)){
+        leaf.doMove(move);
+        if(!this->nodes_.count(leaf.zobristKey())){
+            this->nodes_.emplace(leaf.zobristKey(),MCTSNode(leaf.zobristKey(), leaf.player(), parentKey));
+            return leaf.zobristKey();
         }
+        leaf.undoLastMove();
     }
-    return leaf;
+
+    return parentKey;
 
 }
 //Select a random child, and do the simulation
-Player MCTS::simulate(ChessBoard leaf) {
+Player MCTS::simulate(ChessBoard &leaf) {
 
     vector<ChessMove> moves;
-    MoveGenerator mg;
 
     srand(time(NULL));
     while (true){
-        mg.setBoard(leaf);
-        moves = mg.getMoves();
-        if(moves.empty()) return leaf.opponent();
-        else if(mg.stalemate()) return kPlayerNone;
+        moves = this->getMoves(leaf);
+        if(moves.empty()) {
+            MoveGenerator mg(leaf);
+            if(mg.stalemate()) return kPlayerNone;
+            else return leaf.opponent();
+        }
         leaf.doMove(moves[rand() % moves.size()]);
         //leaf = this->getChildren(leaf)[rand() % this->getChildren(leaf).size()];
     }
 
     return kPlayerNone;
 }
-void MCTS::backpropogate(ChessBoard &leaf, Player win){
+void MCTS::backpropogate(size_t key, Player win){
 
-    if(win == kPlayerNone) this->nodes_.at(leaf).wins++;
-    else if(win == leaf.player()) this->nodes_.at(leaf).wins += 2;
-    this->nodes_.at(leaf).sims++;
-    
-    if(!this->nodes_.at(leaf).isRoot) backpropogate(this->nodes_.at(leaf).parent, win);
-    
+    while(!this->nodes_.at(key).isRoot){
+        if(win == kPlayerNone) this->nodes_.at(key).wins++;
+        else if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins += 2;
+        this->nodes_.at(key).sims++;
+        key = this->nodes_.at(key).parent;
+    }
+    if(win == kPlayerNone) this->nodes_.at(key).wins++;
+    else if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins += 2;
+    this->nodes_.at(key).sims++;
 }
 
 MCTS::MCTS(int times) : ChessAI("Monte Carlo Tree Search"){
     this->times_ = times;
 }
 
-ChessMove MCTS::findOptimalMove(ChessBoard board){
+ChessMove MCTS::findOptimalMove(ChessBoard &board){
 
     using std::chrono::duration_cast;
     using std::chrono::milliseconds;
@@ -100,40 +117,43 @@ ChessMove MCTS::findOptimalMove(ChessBoard board){
 
     srand(time(NULL));
 
-    ChessMove retMove;
+    ChessMove bestMove;
     int maxSims = 0;
+    size_t rootKey = board.zobristKey();
 
     // if(!this->nodes_.count(board)){
     //     this->nodes_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
     // }
-    this->root_ = board;
+
     this->nodes_.clear();
-    this->nodes_.insert(pair<ChessBoard,MCTSNode>(this->root_,MCTSNode(this->root_, this->root_)));
-    this->nodes_.at(this->root_).isRoot = true;
+    this->nodes_.emplace(rootKey, MCTSNode(rootKey, board.player(), rootKey));
+    this->nodes_.at(rootKey).isRoot = true;
 
     auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
     for(int x = 0; x < this->times_; x++){
-        //std::cout << "Selecting..." << std::endl;
-        ChessBoard leaf = this->select(board);
-        //std::cout << "Expanding..." << std::endl;
-        ChessBoard child = this->expand(leaf);
-        //std::cout << "Simulating..." << std::endl;
-        Player winner = this->simulate(child);
-        //std::cout << "Doing backprop..." << std::endl;
-        this->backpropogate(child, winner);
+        ChessBoard root(board);
+        std::cout << "Selecting..." << std::endl;
+        this->select(root);
+        std::cout << "Expanding..." << std::endl;
+        size_t key = this->expand(root);
+        std::cout << "Simulating..." << std::endl;
+        Player winner = this->simulate(board);
+        std::cout << "Doing backprop..." << std::endl;
+        this->backpropogate(key, winner);
         //std::cout << "Finished round " << x+1 << std::endl;
     }
 
     auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     std::cout << endTime - startTime << std::endl;
 
-    //This does redundant work, but whatever
-    for(ChessBoard &child : this->getChildren(this->root_)){
-        if(this->nodes_.count(child) && this->nodes_[child].sims > maxSims){
-            retMove = child.lastMove();
-            maxSims = this->nodes_[child].sims;
+    for(ChessMove move : this->getMoves(board)){
+        board.doMove(move);
+        if(this->nodes_.count(board.zobristKey()) && this->nodes_.at(board.zobristKey()).sims > maxSims){
+            bestMove = move;
+            maxSims = this->nodes_[board.zobristKey()].sims;
         }
+        board.undoLastMove();
     }
-    return retMove;
+    return bestMove;
 }

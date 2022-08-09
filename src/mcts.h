@@ -12,27 +12,27 @@ using std::unordered_map;
 using std::vector;
 
 struct MCTSNode{
-    ChessBoard val;
-    ChessBoard parent;
+    size_t val;
+    size_t parent;
+    Player player;
     int wins, sims;
     bool isRoot;
 
-    MCTSNode(ChessBoard val = ChessBoard(), ChessBoard parent = ChessBoard());
+    MCTSNode(size_t val = 0, Player player = kPlayerWhite, size_t parent = 0);
     double calcUCT(double parentSims);
 };
 class MCTS : public ChessAI{
-    unordered_map<ChessBoard, MCTSNode, ChessBoardHash> nodes_;
+    unordered_map<size_t, MCTSNode> nodes_;
     int times_;
-    ChessBoard root_;
 
-    ChessBoard select(ChessBoard &root);
-    ChessBoard expand(ChessBoard &leaf);
-    Player simulate(ChessBoard leaf);
-    void backpropogate(ChessBoard &leaf, Player win);
+    void select(ChessBoard &root);
+    size_t expand(ChessBoard &leaf);
+    Player simulate(ChessBoard &leaf);
+    void backpropogate(size_t key, Player win);
 
     public:
     MCTS(int times = 100);
-    ChessMove findOptimalMove(ChessBoard board);
+    ChessMove findOptimalMove(ChessBoard &board);
 };
 
 #endif

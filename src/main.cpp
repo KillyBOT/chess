@@ -59,7 +59,7 @@ int main(){
     srand(time(NULL));
 
     vector<ChessMove> moves;
-    MCTS mcts = MCTS(500);
+    MCTS mcts = MCTS(200);
     //Minimax minimax = Minimax(heuristic_basic, 4, false);
     
     while(!mg.hasLost() && !mg.stalemate()){

@@ -57,7 +57,7 @@ ChessBoard::ChessBoard(const ChessBoard& oldBoard) {
     this->seenBoards_ = oldBoard.seenBoards_;
     this->boardHashHistory_ = oldBoard.boardHashHistory_;
     this->gameData_ = oldBoard.gameData_;
-    
+
     this->zobristBlackToMove_ = oldBoard.zobristBlackToMove_;
     this->zobristPieces_ = oldBoard.zobristPieces_;
     this->zobristCastlingRights_ = oldBoard.zobristCastlingRights_;
@@ -218,7 +218,6 @@ void ChessBoard::updateZobrist(ChessMove move) {
 void ChessBoard::addBoardToSeen() {
     if(!this->seenBoards_.count(this->zobristKey())) this->seenBoards_.emplace(this->zobristKey(), 1);
     else this->seenBoards_.at(this->zobristKey())++;
-    this->boardHashHistory_.push_back(this->zobristKey());
 }
 
 void ChessBoard::printBoard() const{
@@ -321,9 +320,11 @@ void ChessBoard::doMove(ChessMove move, bool updateHash){
     // }
     if(updateHash) {
         this->moves_.push_back(move);
-        this->addBoardToSeen();
         this->updateZobrist(move);
+        this->addBoardToSeen();
     }
+    //for(size_t key : this->boardHashHistory_) std::cout << "test " << key << std::endl;
+    //std::cout << std::endl;
     //std::cout << this->zobristKey_ << std::endl;
     //this->printBoard();
 
@@ -368,6 +369,7 @@ void ChessBoard::undoMove(ChessMove move, bool updateHash){
         this->moves_.pop_back();
         this->gameData_.pop_back();
         this->boardHashHistory_.pop_back();
+
     }
 }
 void ChessBoard::undoLastMove(bool updateHash){

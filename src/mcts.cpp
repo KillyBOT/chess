@@ -34,12 +34,18 @@ void MCTS::select(ChessBoard &root){
     double UCT;
     double highestVal = -1;
     ChessMove best;
+    double parentSims;
+
+    if(this->nodes_.count(root.zobristKey())) parentSims = this->nodes_.at(root.zobristKey()).sims;
+    //root.printBoard();
+
     for(ChessMove move : this->getMoves(root)){
+        //std::cout << root.zobristKey() << std::endl;
+        //root.printBoard();
         root.doMove(move);
 
         if(this->nodes_.count(root.zobristKey())){
-
-            UCT = this->nodes_.at(root.zobristKey()).calcUCT(this->nodes_.at(root.zobristKey()).sims);
+            UCT = this->nodes_.at(root.zobristKey()).calcUCT(parentSims);
 
             if(UCT > highestVal) {
                 best = move;
@@ -47,6 +53,11 @@ void MCTS::select(ChessBoard &root){
             }
 
         } else {
+            //std::cout << root.zobristKey() << std::endl;
+            //root.printBoard();
+            root.undoLastMove();
+            //std::cout << root.zobristKey() << std::endl;
+            //root.printBoard();
             return;
         }
 
@@ -63,6 +74,8 @@ size_t MCTS::expand(ChessBoard &leaf) {
     for(ChessMove move : this->getMoves(leaf)){
         leaf.doMove(move);
         if(!this->nodes_.count(leaf.zobristKey())){
+            //std::cout << leaf.zobristKey() << '\t' << parentKey << std::endl;
+            //leaf.printBoard();
             this->nodes_.emplace(leaf.zobristKey(),MCTSNode(leaf.zobristKey(), leaf.player(), parentKey));
             return leaf.zobristKey();
         }
@@ -124,7 +137,6 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
     // if(!this->nodes_.count(board)){
     //     this->nodes_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
     // }
-
     this->nodes_.clear();
     this->nodes_.emplace(rootKey, MCTSNode(rootKey, board.player(), rootKey));
     this->nodes_.at(rootKey).isRoot = true;
@@ -133,15 +145,15 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
 
     for(int x = 0; x < this->times_; x++){
         ChessBoard root(board);
-        std::cout << "Selecting..." << std::endl;
+        //std::cout << "Selecting..." << std::endl;
         this->select(root);
-        std::cout << "Expanding..." << std::endl;
+        //std::cout << "Expanding..." << std::endl;
         size_t key = this->expand(root);
-        std::cout << "Simulating..." << std::endl;
-        Player winner = this->simulate(board);
-        std::cout << "Doing backprop..." << std::endl;
+        //std::cout << "Simulating..." << std::endl;
+        Player winner = this->simulate(root);
+        //std::cout << "Doing backprop..." << std::endl;
         this->backpropogate(key, winner);
-        //std::cout << "Finished round " << x+1 << std::endl;
+        std::cout << "Finished round " << x+1 << std::endl;
     }
 
     auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

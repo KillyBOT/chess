@@ -7,6 +7,7 @@
 #include "board.h"
 
 int heuristic_basic(ChessBoard &board, Player maxPlayer);
+int heuristic_complex(ChessBoard &board, Player maxPlayer);
 
 using std::unordered_map;
 using std::pair;

@@ -46,6 +46,7 @@ class ChessBoard {
     void updateZobrist(ChessMove move);
     void addBoardToSeen();
 
+    
     public:
 
     ChessBoard(bool fill = true);

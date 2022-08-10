@@ -13,6 +13,8 @@ using std::string;
 
 ChessAI::ChessAI(string name){
     this->name_ = name;
+
+    std::cout << "Player [" << name << "] joined" << std::endl;
 }
 
 string ChessAI::name() const{

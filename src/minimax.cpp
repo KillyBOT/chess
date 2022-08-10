@@ -12,18 +12,219 @@ using std::vector;
 
 static MoveGenerator mg;
 
+static const int kLossPenalty = 2147483647;
+static const int kCheckPenalty = 1000;
+static const int kMaterialCoefficient = 1;
+static const int kAttackedCoefficient = 10;
+static const int kPinnedCoefficient = 10;
+static const int kPositionCoefficient = 1;
+
+static const int kPawnTableWhite[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    5, 10, 10, -20, -20, 10, 10, 5,
+    5, -5, -10, 0, 0, -10, -5, 5,
+    0, 0, 0, 20, 20, 0, 0, 0,
+    5, 5, 10, 25, 25, 10, 5, 5,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+static const int kPawnTableBlack[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    5, 5, 10, 25, 25, 10, 5, 5,
+    0, 0, 0, 20, 20, 0, 0, 0,
+    5, -5, -10, 0, 0, -10, -5, 5,
+    5, 10, 10, -20, -20, 10, 10, 5,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+static const int kKnightTable[64] = {
+    -50, -40, -30, -30, -30, -30, -40, -50,
+    -40, -20, 0, 5, 5, 0, -20, -40,
+    -30, 5, 10, 15, 15, 10, 5, -30,
+    -30, 0, 15, 20, 20, 15, 0, -30,
+    -30, 5, 15, 20, 20, 15, 5, -30,
+    -30, 0, 10, 15, 15, 10, 0, -30,
+    -40, -20, 0, 0, 0, 0, -20, -40,
+    -50, -40, -30, -30, -30, -30, -40, -50
+};
+static const int kBishopTableWhite[64] = {
+    -20, -10, -10, -10, -10, -10, -10, -20,
+    -10, 5, 0, 0, 0, 0, 5, -10,
+    -10, 10, 10, 10, 10, 10, 10, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10,
+    -10, 5, 5, 10, 10, 5, 5, -10,
+    -10, 0, 5, 10, 10, 5, 0, -10,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -20, -10, -10, -10, -10, -10, -10, -20
+};
+static const int kBishopTableBlack[64] = {
+    -20, -10, -10, -10, -10, -10, -10, -20,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -10, 0, 5, 10, 10, 5, 0, -10,
+    -10, 5, 5, 10, 10, 5, 5, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10,
+    -10, 10, 10, 10, 10, 10, 10, -10,
+    -10, 5, 0, 0, 0, 0, 5, -10,
+    -20, -10, -10, -10, -10, -10, -10, -20
+};
+static const int kRookTableWhite[64] = {
+    0, 0, 0, 5, 5, 0, 0, 0,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    5, 10, 10, 10, 10, 10, 10, 5,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+static const int kRookTableBlack[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    5, 10, 10, 10, 10, 10, 10, 5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    0, 0, 0, 5, 5, 0, 0, 0
+};
+static const int kQueenTableWhite[64] = {
+    -20, -10, -10, -5, -5, -10, -10, -20,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -10, 5, 5, 5, 5, 5, 0, -10,
+    0, 0, 5, 5, 5, 5, 0, -5,
+    -5, 0, 5, 5, 5, 5, 0, -5,
+    -10, 0, 5, 5, 5, 5, 0, -10,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -20, -10, -10, -5, -5, -10, -10, -20
+};
+static const int kQueenTableBlack[64] = {
+    -20, -10, -10, -5, -5, -10, -10, -20,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -10, 0, 5, 5, 5, 5, 0, -10,
+    -5, 0, 5, 5, 5, 5, 0, -5,
+    0, 0, 5, 5, 5, 5, 0, -5,
+    -10, 5, 5, 5, 5, 5, 0, -10,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -20, -10, -10, -5, -5, -10, -10, -20
+};
+static const int kKingTableWhite[64] = {
+    20, 30, 10, 0, 0, 10, 30, 20,
+    20, 20, 0, 0, 0, 0, 20, 20,
+    -10, -20, -20, -20, -20, -20, -20, -10,
+    -20, -30, -30, -40, -40, -30, -30, -20,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30
+};
+static const int kKingTableBlack[64] = {
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -20, -30, -30, -40, -40, -30, -30, -20,
+    -10, -20, -20, -20, -20, -20, -20, -10,
+    20, 20, 0, 0, 0, 0, 20, 20,
+    20, 30, 10, 0, 0, 10, 30, 20
+};
+
+//Only checks how much material you have, and of course if you've won or not
 int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 
     mg.setBoard(board);
     Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
     int score = 0;
 
-    if(mg.hasLost()) score -= 1000;
-    else if(mg.inCheck()) score -= 100;
+    if(mg.hasLost()) score -= kLossPenalty;
+    else if(mg.inCheck()) score -= kCheckPenalty;
     
-    score += board.playerScore(maxPlayer) - board.playerScore(opponent);
+    score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
 
     if(board.player() == opponent) score *= -1;
+
+    return score;
+}
+
+//Does everything the basic heuristic search does, but also uses attacked squares, number of pinned pieces, and a position evaluation in the calculation
+int heuristic_complex(ChessBoard &board, Player maxPlayer){
+    mg.setBoard(board);
+    Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
+    int score = 0;
+
+    if(mg.hasLost()) score -= kLossPenalty;
+    else if(mg.inCheck()) score -= kCheckPenalty;
+
+    if(board.player() != maxPlayer) score *= -1;
+    
+    score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
+
+    score -= mg.attacked().size() * kAttackedCoefficient;
+    score -= mg.pinned().size() * kPinnedCoefficient;
+
+    mg.player_ = board.opponent();
+    mg.opponent_ = board.player();
+    mg.setKingPos();
+    mg.setAttacked();
+    mg.setPinned();
+
+    score += mg.attacked().size() * kAttackedCoefficient;
+    score += mg.pinned().size() * kPinnedCoefficient;
+
+    mg.setBoard(board);
+
+    int positionScore = 0;
+    int intPos;
+
+    for(auto iter : board.pieces()){
+        intPos = iter.first.asInt();
+        if(iter.second.player == kPlayerWhite){
+            switch(iter.second.pieceType){
+                case kPiecePawn:
+                positionScore += kPawnTableWhite[intPos];
+                break;
+                case kPieceKnight:
+                positionScore += kKnightTable[intPos];
+                break;
+                case kPieceBishop:
+                positionScore += kBishopTableWhite[intPos];
+                break;
+                case kPieceRook:
+                positionScore += kRookTableWhite[intPos];
+                break;
+                case kPieceQueen:
+                positionScore += kQueenTableWhite[intPos];
+                break;
+                case kPieceKing:
+                positionScore += kKingTableWhite[intPos];
+                break;
+            }
+        } else {
+            switch(iter.second.pieceType){
+                case kPiecePawn:
+                positionScore -= kPawnTableBlack[intPos];
+                break;
+                case kPieceKnight:
+                positionScore -= kKnightTable[intPos];
+                break;
+                case kPieceBishop:
+                positionScore -= kBishopTableBlack[intPos];
+                break;
+                case kPieceRook:
+                positionScore -= kRookTableBlack[intPos];
+                break;
+                case kPieceQueen:
+                positionScore -= kQueenTableBlack[intPos];
+                break;
+                case kPieceKing:
+                positionScore -= kKingTableBlack[intPos];
+                break;
+            }
+        }
+    }
+
+    score += (maxPlayer == kPlayerWhite ? positionScore : -positionScore) * kPositionCoefficient;
 
     return score;
 }

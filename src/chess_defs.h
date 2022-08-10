@@ -33,7 +33,7 @@ namespace chess_defs{
         kStateStalemate
     };
 
-    const std::array<int, 8> kPieceValue = {1, 5, 3, 3, 9, 0, 0};
+    const std::array<int, 7> kPieceValue = {100, 500, 300, 320, 900, 0};
 }
 
 #endif

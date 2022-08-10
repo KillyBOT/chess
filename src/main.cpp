@@ -56,11 +56,10 @@ int main(){
     ChessBoard board = ChessBoard();
     mg.setBoard(board);
     board.printBoard();
-    srand(time(NULL));
 
     vector<ChessMove> moves;
     MCTS mcts = MCTS(250);
-    Minimax minimax = Minimax(heuristic_basic, 4, true);
+    Minimax minimax = Minimax(heuristic_complex, 4, true);
     
     while(!mg.hasLost() && !mg.stalemate()){
         // board.doMove(mcts.findOptimalMove(board));
@@ -77,11 +76,17 @@ int main(){
         moves = mg.getMoves(board);
         // for(ChessMove move : moves) cout << move.str() << ", ";
         // cout << endl;
+        srand(time(NULL));
         board.doMove(moves[rand() % moves.size()]);
         board.printBoard();
 
         mg.setBoard(board);
-        
+    }
+
+    if(mg.stalemate()) cout << "Stalemate!" << endl;
+    else{
+        if(board.player() == kPlayerWhite) cout << "Black wins!" << endl;
+        else cout << "White wins!" << endl;
     }
 
     return 0;

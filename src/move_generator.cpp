@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <iostream>
+#include <algorithm>
 
 #include "board.h"
 #include "move_generator.h"
@@ -11,6 +12,9 @@ void rotate_dir(char &col, char &row){
     char tmp = col;
     col = -row;
     row = tmp;
+}
+bool compare_moves(const ChessMove &a, const ChessMove &b) {
+    return a.score > b.score;
 }
 
 static const array<PieceType, 4> kPossiblePromotions = {kPieceRook, kPieceBishop, kPieceKnight, kPieceQueen};
@@ -100,6 +104,14 @@ void MoveGenerator::addMovesInDir(vector<ChessMove> &moves, ChessPiece piece, Ch
     }
 
     if(newMove.isInBounds() && willMoveCapture(newMove)) moves.push_back(newMove);
+}
+void MoveGenerator::setMoveScore(ChessMove &move) const {
+
+    if(move.capture.pieceType != kPieceNone) move.score += 10 * kPieceValue[move.capture.pieceType] - kPieceValue[move.piece.pieceType];
+
+    if(move.isPromoting) move.score += kPieceValue[move.piece.pieceType];
+
+    if(this->attacked_.count(move.newPos)) move.score -= kPieceValue[move.piece.pieceType];
 }
 
 //Get all spots attacked by a piece at pos
@@ -231,7 +243,7 @@ void MoveGenerator::addPieceAttacks(ChessPos pos, ChessPiece piece){
     // }
     // std::cout << std::endl;
 }
-vector<ChessMove> MoveGenerator::pieceMoves(ChessPos pos, ChessPiece piece) const{
+vector<ChessMove> MoveGenerator::addPieceMoves(ChessPos pos, ChessPiece piece) const{
     vector<ChessMove> moves;
 
     //If pinned, can't do any moves
@@ -618,6 +630,9 @@ bool MoveGenerator::stalemate(ChessBoard &board) {
 const ChessPosSet &MoveGenerator::pinned() const {
     return this->pinned_;
 }
+const ChessPosSet &MoveGenerator::attacked() const {
+    return this->attacked_;
+}
 ChessPosSet MoveGenerator::forced() const {
     return this->forcedPositions();
 }
@@ -630,7 +645,7 @@ vector<ChessMove> MoveGenerator::getMoves() const{
 
     for(auto iter : this->board_->pieces()){
         if(iter.second.player == this->player_){
-            vector<ChessMove> movesToAdd = this->pieceMoves(iter.first, iter.second);
+            vector<ChessMove> movesToAdd = this->addPieceMoves(iter.first, iter.second);
             moves.insert(moves.end(), movesToAdd.begin(), movesToAdd.end());
         }
     }
@@ -656,12 +671,29 @@ vector<ChessMove> MoveGenerator::getMoves() const{
 
     return filteredMoves;
 }
-
 vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board){
     this->setBoard(board);
 
     return this->getMoves();
 }
+
+vector<ChessMove> MoveGenerator::getMovesOrdered() const{
+
+    using std::sort;
+
+    vector<ChessMove> orderedMoves = this->getMoves();
+    for(ChessMove &move : orderedMoves) this->setMoveScore(move);
+
+    sort(orderedMoves.begin(), orderedMoves.end(), compare_moves);
+
+    return orderedMoves;
+}
+vector<ChessMove> MoveGenerator::getMovesOrdered(ChessBoard &board){
+    this->setBoard(board);
+
+    return this->getMovesOrdered();
+}
+
 
 void MoveGenerator::printAttacked() const {
     using std::cout;

@@ -27,9 +27,11 @@ class MoveGenerator {
     void addMovesInDir(vector<ChessMove> &moves, ChessPiece piece, ChessPos startPos, char dCol, char dRow) const;
     void addAttacksInDir(ChessPos pos, char dCol, char dRow);
     bool willMoveCapture(ChessMove &move) const;
+    void setMoveScore(ChessMove &move) const;
+    bool compareMoves(const ChessMove &a, const ChessMove &b) const;
 
     void addPieceAttacks(ChessPos pos, ChessPiece piece);
-    vector<ChessMove> pieceMoves(ChessPos pos, ChessPiece piece) const;
+    vector<ChessMove> addPieceMoves(ChessPos pos, ChessPiece piece) const;
     ChessPosSet forcedPositions() const;
     bool enPassantCheck(ChessMove move) const;
 
@@ -51,12 +53,17 @@ class MoveGenerator {
     bool stalemate(ChessBoard &board);
 
     const ChessPosSet &pinned() const;
+    const ChessPosSet &attacked() const;
     ChessPosSet forced() const;
 
     vector<ChessMove> getMoves() const;
     vector<ChessMove> getMoves(ChessBoard &board);
+    vector<ChessMove> getMovesOrdered() const;
+    vector<ChessMove> getMovesOrdered(ChessBoard &board);
 
     void printAttacked() const;
+
+    friend int heuristic_complex(ChessBoard &board, Player maxPlayer);
 };
 
 #endif

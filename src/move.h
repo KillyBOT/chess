@@ -12,6 +12,7 @@ struct ChessMove{
     ChessPos pos;
     ChessPos newPos;
     ChessPiece piece, capture;
+    int score;
     bool isCastling : 1;
     bool isPromoting: 1;
     bool isEnPassant: 1;

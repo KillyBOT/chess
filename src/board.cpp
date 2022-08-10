@@ -194,7 +194,7 @@ void ChessBoard::printBoard() const{
     using std::endl;
 
     ChessPos pos = ChessPos('a',8);
-    cout << this->playerScore(kPlayerWhite) << " | " << this->playerScore(kPlayerBlack) << endl;
+    cout << this->playerScore(kPlayerWhite) / 100 << " | " << this->playerScore(kPlayerBlack) / 100 << endl;
     // if(this->hasWon(kPlayerWhite)) cout << "White has won!" << endl;
     // else if(this->hasWon(kPlayerBlack)) cout << "Black has won!" << endl;
     // else if(this->stalemate()) cout << "Stalemate!" << endl;
@@ -227,7 +227,6 @@ void ChessBoard::printBoard() const{
 
     cout << endl;
 }
-
 void ChessBoard::printMoves() const {
     using std::cout;
     using std::endl;

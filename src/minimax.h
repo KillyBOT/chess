@@ -14,7 +14,7 @@ using std::vector;
 
 class Minimax : public ChessAI{
 
-    unordered_map<ChessBoard,pair<int,int>,ChessBoardHash> boardScores_;
+    unordered_map<size_t,int> boardScores_;
 
     int depth_;
     bool doABPruining_;
@@ -29,7 +29,7 @@ class Minimax : public ChessAI{
     public:
     
     Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_basic, int depth = 4, bool doABPruning = true);
-    ChessMove findOptimalMove(ChessBoard board);
+    ChessMove findOptimalMove(ChessBoard &board);
 
     bool setABPruning();
 };

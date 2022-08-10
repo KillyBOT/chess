@@ -54,22 +54,40 @@ class ChessBoard {
     bool operator==(const ChessBoard &other) const;
     bool operator!=(const ChessBoard &other) const;
 
-    int turnNum() const;
-    Player player() const;
-    Player opponent() const;
+    inline int turnNum() const{
+        return (this->moves_.size() >> 1) + 1;
+    }
+    inline Player player() const {
+        return (this->moves_.size() & 1) ? kPlayerBlack : kPlayerWhite;
+    }
+    inline Player opponent() const {
+        return(this->player() == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
+    }
+    inline ChessMove lastMove() const {
+        return this->moves_.back();
+    }
+    inline bool hasPiece(ChessPos pos) const {
+        return this->pieces_.count(pos);
+    }
+    inline const ChessPiece &piece(ChessPos pos) const {
+        return this->pieces_.at(pos);
+    }
+    inline const unordered_map<ChessPos, ChessPiece, ChessPosHash> &pieces() const {
+        return this->pieces_;
+    }
+    inline const vector<ChessMove> &moves() const {
+        return this->moves_;
+    }
+    inline const unordered_map<size_t, int> &seenBoards() const {
+        return this->seenBoards_;
+    }
+    inline const size_t &zobristKey() const {
+        return this->boardHashHistory_.back();
+    }
+
     int playerScore(Player player) const;
-    ChessMove lastMove() const;
-    bool hasPiece(ChessPos pos) const;
-    const ChessPiece &piece(ChessPos pos) const;
-    const unordered_map<ChessPos, ChessPiece, ChessPosHash> &pieces() const;
-    const vector<ChessMove> &moves() const;
-    const size_t &zobristKey() const;
-    const unordered_map<size_t, int> &seenBoards() const;
-    //std::size_t hash() const;
 
     void printBoard() const;
-    void printAttacked() const;
-    //void printAttackedDict() const;
     void printMoves() const;
 
     void resetZobrist();

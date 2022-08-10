@@ -15,7 +15,7 @@ using ChessPosSet = unordered_set<ChessPos, ChessPosHash>;
 
 class MoveGenerator {
 
-    ChessBoard board_;
+    ChessBoard *board_;
     Player player_, opponent_;
     ChessPos kingPos_;
     ChessPosSet attacked_;
@@ -39,22 +39,22 @@ class MoveGenerator {
 
     public:
     MoveGenerator();
-    MoveGenerator(ChessBoard board);
+    MoveGenerator(ChessBoard &board);
 
-    void setBoard(ChessBoard board);
+    void setBoard(ChessBoard &board);
 
     bool inCheck() const;
-    bool inCheck(ChessBoard board);
+    bool inCheck(ChessBoard &board);
     bool hasLost() const;
-    bool hasLost(ChessBoard board);
+    bool hasLost(ChessBoard &board);
     bool stalemate() const;
-    bool stalemate(ChessBoard board);
+    bool stalemate(ChessBoard &board);
 
     const ChessPosSet &pinned() const;
     ChessPosSet forced() const;
 
     vector<ChessMove> getMoves() const;
-    vector<ChessMove> getMoves(ChessBoard board);
+    vector<ChessMove> getMoves(ChessBoard &board);
 
     void printAttacked() const;
 };

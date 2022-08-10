@@ -71,35 +71,6 @@ bool ChessBoard::operator!=(const ChessBoard &other) const {
     return this->zobristKey() != other.zobristKey();
 }
 
-
-int ChessBoard::turnNum() const{
-    return (this->moves_.size() >> 1) + 1;
-}
-Player ChessBoard::player() const {
-    return (this->moves_.size() & 1) ? kPlayerBlack : kPlayerWhite;
-}
-Player ChessBoard::opponent() const {
-    return(this->player() == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
-}
-ChessMove ChessBoard::lastMove() const {
-    return this->moves_.back();
-}
-bool ChessBoard::hasPiece(ChessPos pos) const {
-    return this->pieces_.count(pos);
-}
-const ChessPiece &ChessBoard::piece(ChessPos pos) const {
-    return this->pieces_.at(pos);
-}
-const unordered_map<ChessPos, ChessPiece, ChessPosHash> &ChessBoard::pieces() const {
-    return this->pieces_;
-}
-const vector<ChessMove> &ChessBoard::moves() const {
-    return this->moves_;
-}
-const unordered_map<size_t, int> &ChessBoard::seenBoards() const {
-    return this->seenBoards_;
-}
-
 int ChessBoard::playerScore(Player player) const{
     int whiteScore = 0;
     int blackScore = 0;
@@ -110,9 +81,6 @@ int ChessBoard::playerScore(Player player) const{
 
     if(player == kPlayerWhite) return whiteScore;
     else return blackScore;
-}
-const size_t &ChessBoard::zobristKey() const {
-    return this->boardHashHistory_.back();
 }
 /*std::size_t ChessBoard::hash() const {
     return this->hash_;
@@ -283,7 +251,7 @@ void ChessBoard::doMove(ChessMove move, bool updateHash){
     //std::cout << this->zobristKey_ << std::endl;
     //this->printBoard();
 
-    //Actually do the move
+    //Remove the piece being captured
     if(move.isEnPassant){
         if(move.piece.player == kPlayerWhite){
             move.newPos.row--;
@@ -296,19 +264,20 @@ void ChessBoard::doMove(ChessMove move, bool updateHash){
         }
     }
     else if(move.capture.pieceType != kPieceNone) this->removePiece(move.newPos);
+
+    //Move the piece being moved
     this->removePiece(move.pos);
     this->addPiece(move.newPos, move.piece);
 
     //Also move rook if there's castling
     if(move.isCastling){
         ChessMove rookMove;
-        if(move.newPos.col == 'b') rookMove = ChessMove(this->pieces_[ChessPos('a',move.pos.row)],ChessPos('a',move.pos.row),ChessPos('c',move.pos.row));
-        else rookMove = ChessMove(this->pieces_[ChessPos('h',move.pos.row)],ChessPos('h',move.pos.row),ChessPos('f',move.pos.row));
+        if(move.newPos.col == 'b') rookMove = ChessMove(this->piece(ChessPos('a',move.pos.row)),ChessPos('a',move.pos.row),ChessPos('c',move.pos.row));
+        else rookMove = ChessMove(this->piece(ChessPos('h',move.pos.row)),ChessPos('h',move.pos.row),ChessPos('f',move.pos.row));
 
         this->doMove(rookMove, false);
-        this->moves_.pop_back();
     }
-    this->pieces_[move.newPos].moveNum++; //I set this later so that the previous check works
+    this->pieces_.at(move.newPos).moveNum++; //I set this later so that the previous check works
 
     // ChessPosSet attacking = this->getAttackedByPiece(move.newPos);
     // if(attacking.count(this->whiteKingPos_)) this->whiteInCheck_ = true;
@@ -331,24 +300,20 @@ void ChessBoard::doMove(ChessMove move, bool updateHash){
 }
 void ChessBoard::undoMove(ChessMove move, bool updateHash){
 
-    if(move.isPromoting){
-        move.piece.pieceType = kPiecePawn;
-    }
-
     if(move.isCastling){
-        if(move.newPos.col == 'b') this->undoMove(ChessMove(this->pieces_.at(ChessPos('c',move.newPos.row)),ChessPos('c',move.newPos.row),ChessPos('a',move.newPos.row)), false);
-        else this->undoMove(ChessMove(this->pieces_.at(ChessPos('c',move.newPos.row)),ChessPos('c',move.newPos.row),ChessPos('a',move.newPos.row)), false);
+        if(move.castlingSide) this->undoMove(ChessMove(this->piece(ChessPos('f',move.newPos.row)),ChessPos('h',move.newPos.row),ChessPos('f',move.newPos.row)), false);
+        else this->undoMove(ChessMove(this->piece(ChessPos('c',move.newPos.row)),ChessPos('a',move.newPos.row),ChessPos('c',move.newPos.row)), false);
     }
 
     if(move.isEnPassant){
         if(move.piece.player == kPlayerWhite){
-            move.newPos.row++;
-            this->addPiece(move.newPos, move.capture);
             move.newPos.row--;
+            this->addPiece(move.newPos, move.capture);
+            move.newPos.row++;
         } else {
-            move.newPos.row--;
-            this->addPiece(move.newPos, move.capture);
             move.newPos.row++;
+            this->addPiece(move.newPos, move.capture);
+            move.newPos.row--;
         }
         this->removePiece(move.newPos);
         move.piece.moveNum--;
@@ -356,12 +321,13 @@ void ChessBoard::undoMove(ChessMove move, bool updateHash){
         
     }
     else {
-        this->doMove(ChessMove(this->pieces_.at(move.newPos), move.newPos,move.pos), false);
-        this->pieces_.at(move.pos).moveNum -= 2;
+        ChessMove newMove = ChessMove(move.piece, move.newPos, move.pos);
+        if(move.isPromoting) newMove.piece.pieceType = kPiecePawn;
 
-        if(move.capture.pieceType != kPieceNone){
-            this->addPiece(move.newPos, move.capture);
-        }
+        this->doMove(newMove, false);
+        this->pieces_.at(move.pos).moveNum--;
+
+        if(move.capture.pieceType != kPieceNone) this->addPiece(move.newPos, move.capture);
     }
 
     if(updateHash) {

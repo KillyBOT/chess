@@ -1,6 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdlib>
+#include <ctime>
 
 #include "move.h"
 #include "board.h"
@@ -59,12 +59,12 @@ int main(){
     srand(time(NULL));
 
     vector<ChessMove> moves;
-    MCTS mcts = MCTS(200);
-    //Minimax minimax = Minimax(heuristic_basic, 4, false);
+    MCTS mcts = MCTS(250);
+    Minimax minimax = Minimax(heuristic_basic, 4, true);
     
     while(!mg.hasLost() && !mg.stalemate()){
-        board.doMove(mcts.findOptimalMove(board));
-        //board.doMove(minimax.findOptimalMove(board));
+        // board.doMove(mcts.findOptimalMove(board));
+        board.doMove(minimax.findOptimalMove(board));
         // for(ChessMove move : moves) cout << move.str() << ", ";
         // cout << endl;
         // moves = mg.getMoves(board);

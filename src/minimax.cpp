@@ -1,133 +1,168 @@
-// #include <iostream>
-// #include <vector>
-// #include <chrono>
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <exception>
 
-// #include "minimax.h"
-// #include "move_generator.h"
-// #include "board.h"
+#include "minimax.h"
+#include "move_generator.h"
+#include "board.h"
 
-// using std::pair;
-// using std::vector;
+using std::pair;
+using std::vector;
 
-// int heuristic_basic(ChessBoard &board, Player maxPlayer) {
+static MoveGenerator mg;
 
-//     MoveGenerator mg = MoveGenerator(board);
-//     Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
-//     int score = 0;
+int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 
-//     if(mg.hasLost()) score -= 1000;
-//     else if(mg.inCheck()) score -= 100;
+    mg.setBoard(board);
+    Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
+    int score = 0;
+
+    if(mg.hasLost()) score -= 1000;
+    else if(mg.inCheck()) score -= 100;
     
-//     score += board.playerScore(opponent) - board.playerScore(maxPlayer);
+    score += board.playerScore(maxPlayer) - board.playerScore(opponent);
 
-//     if(board.player() == maxPlayer) score *= -1;
+    if(board.player() == opponent) score *= -1;
 
-//     return score;
-// }
+    return score;
+}
 
-// int Minimax::evalBoard(ChessBoard &board){
-//     if(!this->boardScores_.count(board)) {
-//         int boardEval = this->heuristicFunc_(board, kPlayerWhite);
-//         this->boardScores_.insert(pair<ChessBoard,pair<int,int>>(board, pair<int,int>(boardEval,-boardEval)));
-//     }
+int Minimax::evalBoard(ChessBoard &board){
+    if(!this->boardScores_.count(board.zobristKey())) {
+        int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
+        this->boardScores_.emplace(board.zobristKey(), this->heuristicFunc_(board, this->maxPlayer_));
+    }
 
-//     if(this->maxPlayer_ == kPlayerWhite) return this->boardScores_[board].first;
-//     else return this->boardScores_[board].second;
-// }
+    // if(this->boardScores_.at(board.zobristKey()) != 0) {
+    //     std::cout << this->boardScores_.at(board.zobristKey()) << std::endl;
+    //     board.printBoard();
+    // }
 
-// int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
+    return this->boardScores_.at(board.zobristKey());
+}
 
-//     if(this->getChildren(board).empty() || depth <= 0) return this->evalBoard(board);
+int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 
-//     int val;
+    if(this->getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
 
-//     if(board.player() == this->maxPlayer_){
+    int val;
 
-//         val = -2147483647;
+    if(board.player() == this->maxPlayer_){
 
-//         for(ChessBoard &child : this->getChildren(board)) val = std::max(evalHelpMinimax(child,depth-1),val);
+        val = -2147483647;
 
-//     } else {
+        for(ChessMove move : this->getMoves(board)){
+            board.doMove(move);
+            val = std::max(evalHelpMinimax(board,depth-1),val);
+            board.undoLastMove();
+        } 
 
-//         val = 2147483647;
+    } else {
 
-//         for(ChessBoard &child : this->getChildren(board)) val = std::min(evalHelpMinimax(child,depth-1),val);
+        val = 2147483647;
 
-//     }
+        for(ChessMove move : this->getMoves(board)){
+            board.doMove(move);
+            val = std::min(evalHelpMinimax(board,depth-1),val);
+            board.undoLastMove();
+        }
 
-//     return val;
-// }
-// int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
+    }
 
-//     //std::cout << depth << std::endl;
+    return val;
+}
+int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
-//     if(this->getChildren(board).empty() || depth <= 0) return this->evalBoard(board);
+    //std::cout << depth << std::endl;
 
-//     int val;
+    if(this->getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
 
-//     if(board.player() == this->maxPlayer_){
+    int val;
 
-//         val = -2147483647;
+    if(board.player() == this->maxPlayer_){
 
-//         for(ChessBoard &child : this->getChildren(board)){
-//             val = std::max(evalHelpAB(child, depth-1, alpha, beta), val);
-//             alpha = std::max(alpha, val);
-//             if(beta <= alpha) break;
-//         }
+        val = -2147483647;
 
-//     } else {
+        for(ChessMove move : this->getMoves(board)){
+            board.doMove(move);
+            //board.printBoard();
+            val = std::max(evalHelpAB(board, depth-1, alpha, beta), val);
+            board.undoLastMove();
+            alpha = std::max(alpha, val);
+            if(beta <= alpha) break;
+        }
 
-//         val = 2147483647;
+    } else {
 
-//         for(ChessBoard &child : this->getChildren(board)){
-//             val = std::min(evalHelpAB(child, depth-1, alpha, beta), val);
-//             beta = std::min(beta, val);
-//             if(beta <= alpha) break;
-//         }
+        val = 2147483647;
 
-//     }
+        for(ChessMove move : this->getMoves(board)){
+            board.doMove(move);
+            //board.printBoard(); 
+            val = std::min(evalHelpAB(board, depth-1, alpha, beta), val);
+            board.undoLastMove();
+            beta = std::min(beta, val);
+            if(beta <= alpha) break;
+        }
 
-//     return val;
-// }
+    }
 
-// Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning) : ChessAI("Minimax"){
-//     this->heuristicFunc_ = heuristicFunc;
-//     this->depth_ = depth;
-//     this->doABPruining_ = doABPruning;
-// }
+    return val;
+}
 
-// ChessMove Minimax::findOptimalMove(ChessBoard board){
+Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning) : ChessAI("Minimax"){
+    this->heuristicFunc_ = heuristicFunc;
+    this->depth_ = depth;
+    this->doABPruining_ = doABPruning;
+}
 
-//     int score;
-//     int bestScore = -2147483647;
-//     ChessMove bestMove;
-//     this->maxPlayer_ = board.player();
+ChessMove Minimax::findOptimalMove(ChessBoard &board){
 
-//     //board.printBoard();
-//     //std::cout << board.player() << std::endl;
+    using std::chrono::duration_cast;
+    using std::chrono::milliseconds;
+    using std::chrono::seconds;
+    using std::chrono::system_clock;
 
-//     for(ChessBoard &child : this->getChildren(board)){
-//         //std::cout << child.player() << std::endl;
-//         //child.printBoard();
+    int score;
+    int bestScore = -2147483647;
+    ChessMove bestMove;
+    this->maxPlayer_ = board.player();
 
-//         //if(this->doABPruining_) score = evalHelpAB(child, this->depth_, -2147483647, 2147483647, board.player());
-//         //else score = evalHelpMinimax(child, this->depth_, board.player());
-//         if(this->doABPruining_) score = evalHelpAB(child, this->depth_ - 1, -2147483647, 2147483647);
-//         else score = this->evalHelpMinimax(child, this->depth_-1);
+    //board.printBoard();
+    //std::cout << board.player() << std::endl;
 
-//         // child.printBoard();
-//         // std::cout << score << std::endl;
+    auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
-//         if(score > bestScore){
-//             bestScore = score;
-//             bestMove = child.lastMove();
-//         }
-//     }
+    for(ChessMove move: this->getMoves(board)){
+        //std::cout << child.player() << std::endl;
+        //child.printBoard();
 
-//     return bestMove;
-// }
+        //if(this->doABPruining_) score = evalHelpAB(child, this->depth_, -2147483647, 2147483647, board.player());
+        //else score = evalHelpMinimax(child, this->depth_, board.player());
+        board.doMove(move);
+        if(this->doABPruining_) score = evalHelpAB(board, this->depth_ - 1, -2147483647, 2147483647);
+        else score = this->evalHelpMinimax(board, this->depth_-1);
+        board.undoLastMove();
 
-// bool Minimax::setABPruning(){
-//     this->doABPruining_ = !this->doABPruining_;
-//     return this->doABPruining_;
-// }
+        // child.printBoard();
+        // std::cout << score << std::endl;
+
+        if(score > bestScore){
+            //std::cout << move.str() << std::endl;
+            //board.printBoard();
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+
+    auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    std::cout << "Found move in [" << endTime - startTime << "] ms" << std::endl;
+
+    return bestMove;
+}
+
+bool Minimax::setABPruning(){
+    this->doABPruining_ = !this->doABPruining_;
+    return this->doABPruining_;
+}

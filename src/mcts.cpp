@@ -89,14 +89,16 @@ size_t MCTS::expand(ChessBoard &leaf) {
 Player MCTS::simulate(ChessBoard &leaf) {
 
     vector<ChessMove> moves;
+    //MoveGenerator mg;
+    //mg.setBoard(leaf);
 
     srand(time(NULL));
     while (true){
         moves = this->getMoves(leaf);
         if(moves.empty()) {
             MoveGenerator mg(leaf);
-            if(mg.stalemate()) return kPlayerNone;
-            else return leaf.opponent();
+            if(mg.hasLost()) return leaf.opponent();
+            else return kPlayerNone;
         }
         leaf.doMove(moves[rand() % moves.size()]);
         //leaf = this->getChildren(leaf)[rand() % this->getChildren(leaf).size()];
@@ -107,8 +109,8 @@ Player MCTS::simulate(ChessBoard &leaf) {
 void MCTS::backpropogate(size_t key, Player win){
 
     while(!this->nodes_.at(key).isRoot){
-        if(win == kPlayerNone) this->nodes_.at(key).wins++;
-        else if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins += 2;
+        //if(win == kPlayerNone) this->nodes_.at(key).wins++;
+        if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins ++;
         this->nodes_.at(key).sims++;
         key = this->nodes_.at(key).parent;
     }
@@ -153,11 +155,8 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
         Player winner = this->simulate(root);
         //std::cout << "Doing backprop..." << std::endl;
         this->backpropogate(key, winner);
-        std::cout << "Finished round " << x+1 << std::endl;
+        //std::cout << "Finished round " << x+1 << std::endl;
     }
-
-    auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    std::cout << endTime - startTime << std::endl;
 
     for(ChessMove move : this->getMoves(board)){
         board.doMove(move);
@@ -167,5 +166,9 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
         }
         board.undoLastMove();
     }
+
+    auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    std::cout << "Found move in [" << endTime - startTime << "] ms" << std::endl;
+
     return bestMove;
 }

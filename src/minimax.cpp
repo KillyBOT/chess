@@ -277,7 +277,11 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     //std::cout << depth << std::endl;
 
-    if(this->getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
+    if(this->getMoves(board).empty()) return this->evalBoard(board);
+    else if(depth <= 0){
+        if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
+        else return this->evalBoard(board);
+    }
 
     int val;
 
@@ -311,11 +315,33 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     return val;
 }
+int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
+    int stand_pat = this->evalBoard(board);
 
-Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning) : ChessAI("Minimax"){
+    if(stand_pat >= beta) return beta;
+    if (alpha < stand_pat) alpha = stand_pat;
+
+    int score;
+
+    for(ChessMove move : this->getMoves(board)){
+        if(move.capture.pieceType != kPieceNone){
+            board.doMove(move);
+            score = -this->evalHelpQuiescence(board, -beta, -alpha);
+            board.undoLastMove();
+
+            if(score >= beta) return beta;
+            if(score > alpha) return alpha;
+        }
+    }
+
+    return alpha;
+}
+
+Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning, bool doQuiescence) : ChessAI("Minimax"){
     this->heuristicFunc_ = heuristicFunc;
     this->depth_ = depth;
     this->doABPruining_ = doABPruning;
+    this->doQuiescence_ = doQuiescence;
 }
 
 ChessMove Minimax::findOptimalMove(ChessBoard &board){

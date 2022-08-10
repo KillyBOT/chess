@@ -19,6 +19,7 @@ class Minimax : public ChessAI{
 
     int depth_;
     bool doABPruining_;
+    bool doQuiescence_;
     Player maxPlayer_;
     int (*heuristicFunc_)(ChessBoard&, Player);
 
@@ -26,10 +27,11 @@ class Minimax : public ChessAI{
 
     int evalHelpMinimax(ChessBoard &board, int depth);
     int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta);
+    int evalHelpQuiescence(ChessBoard &board, int alpha, int beta);
 
     public:
     
-    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_basic, int depth = 4, bool doABPruning = true);
+    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_basic, int depth = 4, bool doABPruning = true, bool doQuiescence = true);
     ChessMove findOptimalMove(ChessBoard &board);
 
     bool setABPruning();

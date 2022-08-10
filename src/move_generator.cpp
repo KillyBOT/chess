@@ -470,7 +470,42 @@ ChessPosSet MoveGenerator::forcedPositions() const {
             }
         }
     }
+    //Then, look for knights
 
+    dCol = 1;
+    dRow = 2;
+
+    for(int i = 0; i < 4; i++){
+        ChessPos knightPos = this->kingPos_;
+        knightPos.row += dRow;
+        knightPos.col += dCol;
+        if(knightPos.isInBounds() && this->board_->hasPiece(knightPos) && this->board_->piece(knightPos).player == this->opponent_ && this->board_->piece(knightPos).pieceType == kPieceKnight){
+            if(!foundAttacker){
+                foundAttacker = true;
+                forced.insert(knightPos);
+            } else {
+                return emptySet;
+            }
+        }
+        knightPos.row -= dRow;
+        knightPos.col -= dCol;
+
+        knightPos.row += dCol;
+        knightPos.col += dRow;
+        if(knightPos.isInBounds() && this->board_->hasPiece(knightPos) && this->board_->piece(knightPos).player == this->opponent_ && this->board_->piece(knightPos).pieceType == kPieceKnight){
+            if(!foundAttacker){
+                foundAttacker = true;
+                forced.insert(knightPos);
+            } else {
+                return emptySet;
+            }
+        }
+    }
+
+    dCol = 1;
+    dRow = 0;
+
+    //Finally, look for queens, rooks, and bishops
     for(int i = 0; i < 4; i++){
 
         //Is there a queen or rook vertically/horizontally?
@@ -510,15 +545,24 @@ ChessPosSet MoveGenerator::forcedPositions() const {
     return forced;
 }
 bool MoveGenerator::enPassantCheck(ChessMove move) const {
-    ChessBoard newBoard = this->board_;
+    char dCol, dRow;
+    vector<pair<ChessPos,ChessPiece>> piecePositions;
 
-    newBoard.doMove(move);
-    MoveGenerator mg(newBoard);
-    mg.player_ = this->player_;
-    mg.opponent_ = this->opponent_;
-    mg.setAttacked();
+    dCol = 1;
 
-    return !mg.inCheck();
+    for(int dCol = -1; dCol < 2; dCol += 2){
+        piecePositions = this->piecesInDir(this->kingPos_,dCol, dRow);
+
+        if(
+            piecePositions.size() > 2 &&
+            piecePositions[0].first == move.pos &&
+            piecePositions[1].second == move.capture &&
+            piecePositions[2].second.player == this->opponent_ &&
+            (piecePositions[2].second.pieceType == kPieceRook || piecePositions[2].second.pieceType == kPieceQueen)
+        ) return false;
+    }
+
+    return true;
 }
 
 void MoveGenerator::setAttacked() {
@@ -597,7 +641,7 @@ bool MoveGenerator::inCheck(ChessBoard &board) {
 }
 
 bool MoveGenerator::hasLost() const {
-    return this->getMoves().empty();
+    return this->getMoves().empty() && !this->stalemate();
 }
 
 bool MoveGenerator::hasLost(ChessBoard &board) {

@@ -13,9 +13,17 @@ using std::unordered_map;
 using std::pair;
 using std::vector;
 
+struct TranspositionTableEntry {
+    int val;
+    int depth;
+
+    TranspositionTableEntry(int val = 0, int depth = 0);
+};
+
 class Minimax : public ChessAI{
 
     unordered_map<size_t,int> boardScores_;
+    unordered_map<size_t, TranspositionTableEntry> transpositionTable_;
 
     int depth_;
     bool doABPruining_;

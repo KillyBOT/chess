@@ -315,16 +315,14 @@ void ChessBoard::undoMove(ChessMove move, bool updateHash){
             move.newPos.row--;
         }
         this->removePiece(move.newPos);
-        move.piece.moveNum--;
         this->addPiece(move.pos,move.piece);
         
     }
     else {
-        ChessMove newMove = ChessMove(move.piece, move.newPos, move.pos);
-        if(move.isPromoting) newMove.piece.pieceType = kPiecePawn;
+        if(move.isPromoting) move.piece.pieceType = kPiecePawn;
 
-        this->doMove(newMove, false);
-        this->pieces_.at(move.pos).moveNum--;
+        this->removePiece(move.newPos);
+        this->addPiece(move.pos, move.piece);
 
         if(move.capture.pieceType != kPieceNone) this->addPiece(move.newPos, move.capture);
     }

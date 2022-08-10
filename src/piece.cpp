@@ -15,7 +15,7 @@ ChessPiece::ChessPiece(const ChessPiece &piece){
     this->moveNum = piece.moveNum;
 }
 bool ChessPiece::operator==(const ChessPiece &other) const{
-    return this->pieceType == other.pieceType && this->player == other.player;
+    return this->pieceType == other.pieceType && this->player == other.player && this->moveNum == other.moveNum;
 }
 char ChessPiece::pieceChar(bool usePlayer) const{
 

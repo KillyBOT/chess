@@ -110,16 +110,6 @@ static const int kQueenTableBlack[64] = {
     -20, -10, -10, -5, -5, -10, -10, -20
 };
 static const int kKingTableWhite[64] = {
-    20, 30, 10, 0, 0, 10, 30, 20,
-    20, 20, 0, 0, 0, 0, 20, 20,
-    -10, -20, -20, -20, -20, -20, -20, -10,
-    -20, -30, -30, -40, -40, -30, -30, -20,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30,
-    -30, -40, -40, -50, -50, -40, -40, -30
-};
-static const int kKingTableBlack[64] = {
     -30, -40, -40, -50, -50, -40, -40, -30,
     -30, -40, -40, -50, -50, -40, -40, -30,
     -30, -40, -40, -50, -50, -40, -40, -30,
@@ -128,6 +118,16 @@ static const int kKingTableBlack[64] = {
     -10, -20, -20, -20, -20, -20, -20, -10,
     20, 20, 0, 0, 0, 0, 20, 20,
     20, 30, 10, 0, 0, 10, 30, 20
+};
+static const int kKingTableBlack[64] = {
+    20, 30, 10, 0, 0, 10, 30, 20,
+    20, 20, 0, 0, 0, 0, 20, 20,
+    -10, -20, -20, -20, -20, -20, -20, -10,
+    -20, -30, -30, -40, -40, -30, -30, -20,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30
 };
 
 //Only checks how much material you have, and of course if you've won or not
@@ -229,6 +229,11 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
     return score;
 }
 
+TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
+    this->val = val;
+    this->depth = depth;
+}
+
 int Minimax::evalBoard(ChessBoard &board){
     if(!this->boardScores_.count(board.zobristKey())) {
         int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
@@ -275,23 +280,69 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 }
 int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
-    //std::cout << depth << std::endl;
+    // std::cout << depth << std::endl;
+    int val;
 
-    if(this->getMoves(board).empty()) return this->evalBoard(board);
-    else if(depth <= 0){
+    if(!this->transpositionTable_.count(board.zobristKey()) || this->transpositionTable_.at(board.zobristKey()).depth < depth){
+        int val;
+
+        if(this->transpositionTable_.count(board.zobristKey())) this->transpositionTable_.erase(board.zobristKey());
+
+        if(this->getMoves(board).empty()) {
+            depth = 2147483647;
+            val = this->evalBoard(board);
+        }
+        else if(depth <= 0){
+            if(this->doQuiescence_) val = this->evalHelpQuiescence(board, alpha, beta);
+            else val = this->evalBoard(board);
+        }
+        else {
+
+            if(board.player() == this->maxPlayer_){
+
+                val = -2147483647;
+
+                for(ChessMove move : this->getMoves(board)){
+                    board.doMove(move);
+                    val = std::max(evalHelpAB(board, depth-1, alpha, beta), val);
+                    board.undoLastMove();
+                    alpha = std::max(alpha, val);
+                    if(beta <= alpha) break;
+                }
+
+            } else {
+
+                val = 2147483647;
+
+                for(ChessMove move : this->getMoves(board)){
+                    board.doMove(move);
+                    val = std::min(evalHelpAB(board, depth-1, alpha, beta), val);
+                    board.undoLastMove();
+                    beta = std::min(beta, val);
+                    if(beta <= alpha) break;
+                }
+
+            }
+        }
+
+        this->transpositionTable_.emplace(board.zobristKey(),TranspositionTableEntry(val, depth));
+    
+    }
+
+    return this->transpositionTable_.at(board.zobristKey()).val;
+
+    /*if(this->getMoves(board).empty() || depth <= 0){
         if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
         else return this->evalBoard(board);
     }
 
     int val;
-
     if(board.player() == this->maxPlayer_){
 
         val = -2147483647;
 
         for(ChessMove move : this->getMoves(board)){
             board.doMove(move);
-            //board.printBoard();
             val = std::max(evalHelpAB(board, depth-1, alpha, beta), val);
             board.undoLastMove();
             alpha = std::max(alpha, val);
@@ -304,7 +355,6 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
         for(ChessMove move : this->getMoves(board)){
             board.doMove(move);
-            //board.printBoard(); 
             val = std::min(evalHelpAB(board, depth-1, alpha, beta), val);
             board.undoLastMove();
             beta = std::min(beta, val);
@@ -313,7 +363,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     }
 
-    return val;
+    return val;*/
 }
 int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
     int stand_pat = this->evalBoard(board);

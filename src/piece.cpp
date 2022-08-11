@@ -1,27 +1,21 @@
-#include <iostream>
-
 #include "piece.h"
 
-using namespace std;
-
-ChessPiece::ChessPiece(PieceType pieceType, Player player){
-    this->pieceType = pieceType;
+ChessPiece::ChessPiece(PieceType type, Player player) {
+    this->type = type;
     this->player = player;
-    this->moveNum = 0;
+    this->hasMoved = false;
+    this->justMoved = false;
 }
-ChessPiece::ChessPiece(const ChessPiece &piece){
-    this->pieceType = piece.pieceType;
+ChessPiece::ChessPiece(const ChessPiece &piece) {
+    this->type = piece.type;
     this->player = piece.player;
-    this->moveNum = piece.moveNum;
+    this->hasMoved = piece.hasMoved;
+    this->justMoved = piece.justMoved;
 }
-bool ChessPiece::operator==(const ChessPiece &other) const{
-    return this->pieceType == other.pieceType && this->player == other.player && this->moveNum == other.moveNum;
-}
-char ChessPiece::pieceChar(bool usePlayer) const{
 
+char ChessPiece::pieceChar(bool usePlayer) const {
     char c;
-
-    switch(this->pieceType){
+    switch(this->type) {
         case kPiecePawn:
         c = 'P';
         break;
@@ -40,15 +34,8 @@ char ChessPiece::pieceChar(bool usePlayer) const{
         case kPieceKing:
         c = 'K';
         break;
-        case kPieceNone:
-        default:
-        c = 'X';
-        break;
     }
-
-    if(usePlayer && this->player == kPlayerBlack){
-        c += 32; //Go from uppercase to lowercase
-    }
+    if(usePlayer && this->player == kPlayerBlack) c += 32;
 
     return c;
 }

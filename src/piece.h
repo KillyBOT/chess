@@ -10,17 +10,15 @@ using namespace chess_defs;
 
 struct ChessPiece {
 
-    PieceType pieceType;
+    PieceType type;
     Player player;
-    int moveNum;
+    bool hasMoved;
+    bool justMoved;
 
-    ChessPiece(PieceType pieceType = kPieceNone, Player player = kPlayerNone);
+    ChessPiece(PieceType type = kPieceNone, Player player = kPlayerWhite);
     ChessPiece(const ChessPiece &piece);
-    bool operator==(const ChessPiece &other) const;
 
     char pieceChar(bool usePlayer = true) const;
-
-    void printPiece();
 };
 
 #endif

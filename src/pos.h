@@ -5,23 +5,20 @@
 #include <vector>
 
 struct ChessPos{
-    char row, col;
+    int pos;
 
+    ChessPos(int pos = 0);
+    ChessPos(std::string str);
     ChessPos(const ChessPos &pos);
-    ChessPos(char col = 'a', char row = 0);
 
-    bool isInBounds() const;
-    int asInt() const;
+    bool inBounds() const;
+    char rank() const;
+    char file() const;
     std::string str() const;
-    std::string str_int() const;
 
     bool operator==(const ChessPos &other) const;
 };
 
-struct ChessPosHash{
-    std::size_t operator() (const ChessPos &pos) const;
-};
-
-std::vector<ChessPos> positions_in_ray(ChessPos start, char dCol, char dRow);
+std::vector<ChessPos> positions_in_ray(ChessPos &start, int dCol, int dRow);
 
 #endif

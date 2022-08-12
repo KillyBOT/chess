@@ -1,21 +1,23 @@
 #include "piece.h"
 
+ChessPiece::ChessPiece(Byte data){
+    this->data = data;
+}
 ChessPiece::ChessPiece(PieceType type, Player player) {
-    this->type = type;
-    this->player = player;
-    this->hasMoved = false;
-    this->justMoved = false;
+    this->data = player;
+    this->data <<= 3;
+    this->data |= type;
 }
 ChessPiece::ChessPiece(const ChessPiece &piece) {
-    this->type = piece.type;
-    this->player = piece.player;
-    this->hasMoved = piece.hasMoved;
-    this->justMoved = piece.justMoved;
+    this->data = piece.data;
 }
 
 char ChessPiece::pieceChar(bool usePlayer) const {
     char c;
-    switch(this->type) {
+    switch(this->type()) {
+        case kPieceNone:
+        c = 'X';
+        break;
         case kPiecePawn:
         c = 'P';
         break;
@@ -35,7 +37,7 @@ char ChessPiece::pieceChar(bool usePlayer) const {
         c = 'K';
         break;
     }
-    if(usePlayer && this->player == kPlayerBlack) c += 32;
+    if(usePlayer && this->player() == kPlayerBlack) c += 32;
 
     return c;
 }

@@ -13,8 +13,8 @@ const char kRayDirSW = 5;
 const char kRayDirSE = 6;
 const char kRayDirNE = 7;
 
-extern std::array<std::array<std::vector<int>,8>,64> gRays;
-extern std::array<std::vector<int>,64> gKnightPositionTable;
+extern std::vector<int> kRays[64][8];
+extern std::vector<int> kKnightPositionTable[64];
 
 void initRayTable();
 void initKnightPositionTable();

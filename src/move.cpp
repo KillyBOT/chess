@@ -1,65 +1,56 @@
-#include <iostream>
-#include <vector>
 #include <string>
+#include <iostream>
 
-#include "piece.h"
-#include "pos.h"
 #include "move.h"
 
-using std::string;
-
-ChessMove::ChessMove(ChessPiece piece, ChessPos pos, ChessPos newPos){
-    this->pos = pos;
-    this->newPos = newPos;
+ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
-    this->capture = ChessPiece();
-    this->isCastling = false;
-    this->isPromoting = false;
-    this->isEnPassant = false;
-    this->isEnPassantEligible = false;
-    this->castlingSide = false;
-    this->score = 0;
+    this->oldPos = oldPos;
+    this->newPos = newPos;
 }
-
-ChessMove::ChessMove(const ChessMove &move){
-    this->pos = move.pos;
-    this->newPos = move.newPos;
+ChessMove::ChessMove(const ChessMove &move) {
     this->piece = move.piece;
-    this->capture = move.capture;
-    this->isCastling = move.isCastling;
-    this->isPromoting = move.isPromoting;
-    this->isEnPassant = move.isEnPassant;
-    this->isEnPassantEligible = move.isEnPassantEligible;
-    this->castlingSide = move.castlingSide;
-    this->score = move.score;
+    this->captured = move.captured;
+    this->oldPos = move.oldPos;
+    this->newPos = move.newPos;
+    this->moveData = move.moveData;
 }
 
-//Theoretically, you should never have a situation where the old pos is never out of bounds
-bool ChessMove::isInBounds() const {
-    return this->newPos.isInBounds();
+PieceType ChessMove::promotionType() const {
+    switch(this->moveData){
+        case kMovePromotingToQueen:
+        return kPieceQueen;
+        case kMovePromotingToRook:
+        return kPieceRook;
+        case kMovePromotingToKnight:
+        return kPieceKnight;
+        case kMovePromotingToBishop:
+        return kPieceBishop;
+        default:
+        return kPieceNone;
+    }
 }
-
-string ChessMove::basicStr() const {
-    string str;
-    str = this->piece.pieceChar();
-    return str + " " + this->pos.str() + " " + this->newPos.str();
+bool ChessMove::isValid() const {
+    return this->newPos.inBounds() && this->oldPos.pos != this->newPos.pos;
 }
-
-string ChessMove::str() const {
-    string str;
-    if(this->piece.pieceType != kPiecePawn && !this->isPromoting) str += this->piece.pieceChar(false);
-    if(this->capture.pieceType != kPieceNone) str += 'x';
-
-    str += this->newPos.str();
-
-    if(this->isPromoting){
-        str += "=" + this->piece.pieceChar(false);
+std::string ChessMove::str() const {
+    std::string str;
+    if(this->isCastling()){
+        if(this->isCastlingKingside()) return "0-0";
+        else return "0-0-0";
     }
 
-    if(this->isCastling){
-        if(this->newPos.col == 'b') str = "0-0-0";
-        else str = "0-0";
+    if(this->piece.type() != kPiecePawn) str += this->piece.pieceChar();
+    if(this->captured.type() != kPieceNone) str += 'x';
+    str += this->newPos.str();
+
+    if(this->isPromoting()){
+        str += '=';
+        str += ChessPiece(this->promotionType(), this->piece.player()).pieceChar();
     }
 
     return str;
+}
+bool ChessMove::isCastlingKingside() const {
+    return this->newPos.file() == 'b';
 }

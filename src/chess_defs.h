@@ -5,35 +5,23 @@
 #include <array>
 
 using Byte = unsigned char;
+using Player = Byte;
+using PieceType = Byte;
 
 namespace chess_defs{
 
-    enum Player {
-        kPlayerWhite = 0,
-        kPlayerBlack = 1,
-        kPlayerNone
-    };
+    const Player kPlayerWhite = 0;
+    const Player kPlayerBlack = 1;
 
-    enum PieceType {
-        kPiecePawn=0,
-        kPieceRook,
-        kPieceKnight,
-        kPieceBishop,
-        kPieceQueen,
-        kPieceKing,
-        kPieceNone
-    };
+    const PieceType kPieceNone = 0;
+    const PieceType kPiecePawn = 1;
+    const PieceType kPieceRook = 2;
+    const PieceType kPieceKnight = 3;
+    const PieceType kPieceBishop = 4;
+    const PieceType kPieceQueen = 5;
+    const PieceType kPieceKing = 6;
 
-    enum BoardState {
-        kStateNone,
-        kStateWhiteWin,
-        kStateBlackWin,
-        kStateWhiteInCheck,
-        kStateBlackInCheck,
-        kStateStalemate
-    };
-
-    const std::array<int, 7> kPieceValue = {100, 500, 300, 320, 900, 0};
+    const std::array<int, 7> kPieceValue = {0, 100, 500, 300, 320, 900, 0};
 }
 
 #endif

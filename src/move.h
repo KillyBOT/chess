@@ -8,23 +8,47 @@
 #include "pos.h"
 #include "piece.h"
 
-struct ChessMove{
-    ChessPos pos;
+const Byte kMoveNone = 0;
+const Byte kMoveIsCastling = 1;
+const Byte kMovePromotingToQueen = 2;
+const Byte kMovePromotingToRook = 3;
+const Byte kMovePromotingToKnight = 4;
+const Byte kMovePromotingToBishop = 5;
+const Byte kMoveEnPassant = 6;
+const Byte kMoveEnPassantEligible = 7;
+
+struct ChessMove {
+
+    ChessPos oldPos;
     ChessPos newPos;
-    ChessPiece piece, capture;
-    int score;
-    bool isCastling : 1;
-    bool isPromoting: 1;
-    bool isEnPassant: 1;
-    bool isEnPassantEligible: 1;
-    bool castlingSide : 1; //False for queenside, true for kingside
+    ChessPiece piece;
+    ChessPiece captured;
+    Byte moveData;
     
-    ChessMove(ChessPiece piece = ChessPiece(), ChessPos pos = ChessPos(), ChessPos newPos = ChessPos());
+    ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos);
     ChessMove(const ChessMove &move);
 
-    bool isInBounds() const;
-    std::string basicStr() const;
+    inline bool isCapturing() const {
+        return this->captured.type();
+    }
+    inline bool isCastling() const {
+        return this->moveData & kMoveIsCastling;
+    }
+    inline bool isPromoting() const {
+        return this->moveData & kMovePromotingToQueen || this->moveData & kMovePromotingToRook || this->moveData & kMovePromotingToKnight || this->moveData & kMovePromotingToBishop;
+    }
+    inline bool isEnPassant() const {
+        return this->moveData & kMoveEnPassant;
+    }
+    inline bool isEnPassantEligible() const {
+        return this->moveData & kMoveEnPassantEligible;
+    }
+
+    PieceType promotionType() const;
+    bool isValid() const;
+    bool isCastlingKingside() const;
     std::string str() const;
+
 };
 
 #endif

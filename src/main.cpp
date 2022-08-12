@@ -5,15 +5,27 @@
 #include "pos.h"
 #include "piece.h"
 #include "ray.h"
-
-using std::cout;
-using std::endl;
+#include "board.h"
+#include "move_generator.h"
 
 int main()
 {
+    using std::cout;
+    using std::endl;
 
     initRayTable();
     initKnightPositionTable();
+    init_zobrist_nums();
+
+    ChessBoard board;
+
+    cout << board.key() << endl;
+    board.printBoard();
+
+    MoveGenerator mg;
+
+    mg.setBoard(board);
+    mg.printAttacked();
 
     // cout << ChessPos("a3").pos << endl;
     // cout << ChessPos("a3").str() << endl;

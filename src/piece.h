@@ -10,13 +10,21 @@ using namespace chess_defs;
 
 struct ChessPiece {
 
-    PieceType type;
-    Player player;
-    bool hasMoved;
-    bool justMoved;
+    Byte data;
 
-    ChessPiece(PieceType type = kPieceNone, Player player = kPlayerWhite);
+    ChessPiece(Byte data = 0);
+    ChessPiece(PieceType type, Player player);
     ChessPiece(const ChessPiece &piece);
+
+    inline PieceType type() const {
+        return (this->data & 0b111);
+    }
+    inline Player player() const {
+        return (this->data >> 3) & 1;
+    }
+    inline bool hasMoved() const {
+        return (this->data >> 4) & 1;
+    }
 
     char pieceChar(bool usePlayer = true) const;
 };

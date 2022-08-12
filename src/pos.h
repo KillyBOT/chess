@@ -4,10 +4,13 @@
 #include <string>
 #include <vector>
 
-struct ChessPos{
-    int pos;
+#include "chess_defs.h"
 
-    ChessPos(int pos = 0);
+struct ChessPos{
+    char pos;
+
+    ChessPos(char pos = -1);
+    ChessPos(char rank, char file);
     ChessPos(std::string str);
     ChessPos(const ChessPos &pos);
 
@@ -17,8 +20,7 @@ struct ChessPos{
     std::string str() const;
 
     bool operator==(const ChessPos &other) const;
+    bool operator!=(const ChessPos &other) const;
 };
-
-std::vector<ChessPos> positions_in_ray(ChessPos &start, int dCol, int dRow);
 
 #endif

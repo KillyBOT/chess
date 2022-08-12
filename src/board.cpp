@@ -1,227 +1,194 @@
 #include <iostream>
-#include <array>
+#include <string>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
+#include <cstring>
 #include <cstdlib>
 
 #include "board.h"
 
-static const Byte whiteKingsideMask = 0b1110;
-static const Byte blackKingsideMask = 0b1101;
-static const Byte whiteQueensideMask = 0b1011;
-static const Byte blackQueensideMask = 0b0111;
+using std::vector;
+using std::size_t;
 
-ChessBoard::ChessBoard(bool fill){
+size_t kZobristPieceNums[64][12];
+size_t kZobristBlackToMoveNum;
+size_t kZobristCastlingNums[16];
+size_t kZobristEnPassantNums[9];
 
-    using std::pair;
+void init_zobrist_nums() {
+    srand(43252003); //The first 8 digits of the number of possible rubik's cube configurations
 
-    // for(char col = 'a'; col <= 'h'; col++){
-    //     for(char row = 1; row <= 8; row++){
-    //         this->attacked_.emplace(ChessPos(col,row),unordered_set<ChessPos,ChessPosHash>());
-    //     }
-    // }
+    for(int pos = 0; pos < 64; pos++){
+        for(int type = 0; type < 12; type++){
+            kZobristPieceNums[pos][type] = rand();
+        }
+    }
 
-    if(fill){
-        this->addPiece(ChessPos('a',1), ChessPiece(kPieceRook, kPlayerWhite));
-        this->addPiece(ChessPos('b',1), ChessPiece(kPieceKnight, kPlayerWhite));
-        this->addPiece(ChessPos('c',1), ChessPiece(kPieceBishop, kPlayerWhite));
-        this->addPiece(ChessPos('d',1), ChessPiece(kPieceQueen, kPlayerWhite));
-        this->addPiece(ChessPos('e',1), ChessPiece(kPieceKing, kPlayerWhite));
-        this->addPiece(ChessPos('f',1), ChessPiece(kPieceBishop, kPlayerWhite));
-        this->addPiece(ChessPos('g',1), ChessPiece(kPieceKnight, kPlayerWhite));
-        this->addPiece(ChessPos('h',1), ChessPiece(kPieceRook, kPlayerWhite));
+    kZobristBlackToMoveNum = rand();
+    for(int i = 0; i < 16; i++) kZobristCastlingNums[i] = rand();
+    for(int i = 0; i < 9; i++) kZobristEnPassantNums[i] = rand();
+}
 
-        this->addPiece(ChessPos('a',8), ChessPiece(kPieceRook, kPlayerBlack));
-        this->addPiece(ChessPos('b',8), ChessPiece(kPieceKnight, kPlayerBlack));
-        this->addPiece(ChessPos('c',8), ChessPiece(kPieceBishop, kPlayerBlack));
-        this->addPiece(ChessPos('d',8), ChessPiece(kPieceQueen, kPlayerBlack));
-        this->addPiece(ChessPos('e',8), ChessPiece(kPieceKing, kPlayerBlack));
-        this->addPiece(ChessPos('f',8), ChessPiece(kPieceBishop, kPlayerBlack));
-        this->addPiece(ChessPos('g',8), ChessPiece(kPieceKnight, kPlayerBlack));
-        this->addPiece(ChessPos('h',8), ChessPiece(kPieceRook, kPlayerBlack));
+ChessBoard::ChessBoard(bool initBoard){
+
+    using std::string;
+
+    this->pieceNum_ = 0;
+    this->blackToMove_ = false;
+    this->whiteKingPos_ = ChessPos();
+    this->blackKingPos_ = ChessPos();
+
+    if(initBoard){
+
+        string whitePawnStr, blackPawnStr;
+
+        this->addPiece(ChessPos("a1"), ChessPiece(kPieceRook, kPlayerWhite));
+        this->addPiece(ChessPos("b1"), ChessPiece(kPieceKnight, kPlayerWhite));
+        this->addPiece(ChessPos("c1"), ChessPiece(kPieceBishop, kPlayerWhite));
+        this->addPiece(ChessPos("d1"), ChessPiece(kPieceQueen, kPlayerWhite));
+        this->addPiece(ChessPos("e1"), ChessPiece(kPieceKing, kPlayerWhite));
+        this->addPiece(ChessPos("f1"), ChessPiece(kPieceBishop, kPlayerWhite));
+        this->addPiece(ChessPos("g1"), ChessPiece(kPieceKnight, kPlayerWhite));
+        this->addPiece(ChessPos("h1"), ChessPiece(kPieceRook, kPlayerWhite));
+
+        this->addPiece(ChessPos("a8"), ChessPiece(kPieceRook, kPlayerBlack));
+        this->addPiece(ChessPos("b8"), ChessPiece(kPieceKnight, kPlayerBlack));
+        this->addPiece(ChessPos("c8"), ChessPiece(kPieceBishop, kPlayerBlack));
+        this->addPiece(ChessPos("d8"), ChessPiece(kPieceQueen, kPlayerBlack));
+        this->addPiece(ChessPos("e8"), ChessPiece(kPieceKing, kPlayerBlack));
+        this->addPiece(ChessPos("f8"), ChessPiece(kPieceBishop, kPlayerBlack));
+        this->addPiece(ChessPos("g8"), ChessPiece(kPieceKnight, kPlayerBlack));
+        this->addPiece(ChessPos("h8"), ChessPiece(kPieceRook, kPlayerBlack));
 
         for(char c = 'a'; c <= 'h'; c++){ //Yoo like C++ that's so crazy bro
-            this->addPiece(ChessPos(c,2), ChessPiece(kPiecePawn, kPlayerWhite));
-            this->addPiece(ChessPos(c,7), ChessPiece(kPiecePawn, kPlayerBlack));
+            whitePawnStr = c;
+            whitePawnStr += '2';
+            blackPawnStr = c;
+            blackPawnStr += '7';
+            this->addPiece(ChessPos(whitePawnStr), ChessPiece(kPiecePawn, kPlayerWhite));
+            this->addPiece(ChessPos(blackPawnStr), ChessPiece(kPiecePawn, kPlayerBlack));
         }
     }
 
-    //this->updateHash();
-    this->resetZobrist();
-    this->addBoardToSeen();
+    this->addInitialKey();
 }
-ChessBoard::ChessBoard(const ChessBoard& oldBoard) {
-    this->pieces_ = oldBoard.pieces_;
-    this->moves_ = oldBoard.moves_;
-    this->seenBoards_ = oldBoard.seenBoards_;
-    this->boardHashHistory_ = oldBoard.boardHashHistory_;
-    this->gameData_ = oldBoard.gameData_;
+ChessBoard::ChessBoard(const ChessBoard &board) {
+    memcpy(this->pieces_,board.pieces_, 64 * sizeof(ChessPiece));
+    memcpy(this->piecePositions_, board.piecePositions_, 64 * sizeof(Byte));
 
-    this->zobristBlackToMove_ = oldBoard.zobristBlackToMove_;
-    this->zobristPieces_ = oldBoard.zobristPieces_;
-    this->zobristCastlingRights_ = oldBoard.zobristCastlingRights_;
-    this->zobristEnPassantFile_ = oldBoard.zobristEnPassantFile_;
+    this->boardData_ = board.boardData_;
+    this->boardHistory_ = board.boardHistory_;
+    this->moves_ = board.moves_;
+
+    this->blackToMove_ = board.blackToMove_;
+    this->pieceNum_ = board.pieceNum_;
 }
 
-bool ChessBoard::operator==(const ChessBoard& other) const{
-    return this->zobristKey() == other.zobristKey();
-}
-bool ChessBoard::operator!=(const ChessBoard &other) const {
-    return this->zobristKey() != other.zobristKey();
-}
+void ChessBoard::addNewKey(ChessMove move) {
+    size_t newKey = this->key();
+    Byte castlingInfo = this->boardData_.back() & 0b1111;
+    unsigned short newData = 0;
 
-int ChessBoard::playerScore(Player player) const{
-    int whiteScore = 0;
-    int blackScore = 0;
-    for(auto iter : this->pieces_){
-        if(iter.second.player == kPlayerWhite) whiteScore += kPieceValue[iter.second.pieceType];
-        else blackScore += kPieceValue[iter.second.pieceType];
-    }
+    newKey ^= kZobristEnPassantNums[((this->boardData_.back() >> 4) & 0b1111)];
+    newKey ^= kZobristCastlingNums[castlingInfo];
 
-    if(player == kPlayerWhite) return whiteScore;
-    else return blackScore;
-}
-/*std::size_t ChessBoard::hash() const {
-    return this->hash_;
-}*/
-
-/*void ChessBoard::updateHash(){
-    this->hash_ = this->pieces_.size();
-    std::size_t x;
-    ChessPos pos;
-    for(char col = 'a'; col <= 'h'; col++){
-        for(char row = 1; row <= 8; row++){
-            pos = ChessPos(col, row);
-            if(this->pieces_.count(pos)){
-                x = col;
-                x <<= 8;
-                x |= row;
-                x <<= 8;
-                x |= this->pieces_.at(pos).pieceType;
-                x = ((x >> 16) ^ x) * 0x45d9f3b;
-                x = ((x >> 16) ^ x) * 0x45d9f3b;
-                x = (x >> 16) ^ x;
-                this->hash_ ^= x + 0x9e3779b9 + (this->hash_ << 6) + (this->hash_ >> 2);
-            }
-        }
-    }
-}*/
-void ChessBoard::resetZobrist() {
-
-    this->gameData_.push_back(0b1111);
-    this->boardHashHistory_.push_back(0);
-
-    srand(43252003); //The first 8 digits of God's number (the number of possible permutations of a rubik's cube)
-    for(int i = 0; i < 64; i++){
-        for(int j = 0; j < 12; j++){
-            this->zobristPieces_[i][j] = rand();
-        }
-    }
-    this->zobristBlackToMove_ = rand();
-    
-    for(int i = 0; i < 16; i++) this->zobristCastlingRights_[i] = rand();
-    for(int i = 0; i < 8; i++) this->zobristEnPassantFile_[i] = rand();
-
-    for(auto iter : this->pieces_){
-        this->boardHashHistory_.back() ^= this->zobristPieces_[(iter.first.col - 'a') * 8 + (iter.first.row - 1)][iter.second.pieceType + iter.second.player * 6];
-    }
-
-    this->boardHashHistory_.back() ^= this->zobristCastlingRights_[this->gameData_.back() & 0b1111];
-}
-void ChessBoard::updateZobrist(ChessMove move) {
-    Byte newGameData = this->gameData_.back();
-    size_t newKey = this->boardHashHistory_.back();
-
-    //Get rid of the piece at the old position
-    if(move.isPromoting) newKey ^= this->zobristPieces_[(move.pos.col - 'a') * 8 + (move.pos.row - 1)][move.piece.player * 6];
-    else newKey ^= this->zobristPieces_[(move.pos.col - 'a') * 8 + (move.pos.row - 1)][move.piece.pieceType + move.piece.player * 6];
-
-    //If you're capturing or doing en passant, also get rid of the piece you're capturing
-    if(move.isEnPassant){
-        if(move.piece.player == kPlayerWhite){
-            move.newPos.row--;
-            newKey ^= this->zobristPieces_[(move.newPos.col - 'a') * 8 + (move.newPos.row - 1)][move.capture.player * 6]; //For both of these, it should always be a pawn, so I shouldn't have to worry
-            move.newPos.row++;
+    //If castling, remove the rook from the old position and add it at the new position
+    if(move.isCastling()){
+        if(move.isCastlingKingside()){
+            newKey ^= kZobristPieceNums[ChessPos('h',move.oldPos.rank()).pos][(kPieceRook - 1) + 6 * move.piece.player()];
+            newKey ^= kZobristPieceNums[ChessPos('f',move.oldPos.rank()).pos][(kPieceRook - 1) + 6 * move.piece.player()];
         } else {
-            move.newPos.row++;
-            newKey ^= this->zobristPieces_[(move.newPos.col - 'a') * 8 + (move.newPos.row - 1)][move.capture.player * 6];
-            move.newPos.row--;
+            newKey ^= kZobristPieceNums[ChessPos('a',move.oldPos.rank()).pos][(kPieceRook - 1) + 6 * move.piece.player()];
+            newKey ^= kZobristPieceNums[ChessPos('c',move.oldPos.rank()).pos][(kPieceRook - 1) + 6 * move.piece.player()];
         }
     }
-    else if(move.capture.pieceType != kPieceNone) newKey ^= this->zobristPieces_[(move.newPos.col - 'a') * 8 + (move.newPos.row - 1)][move.capture.pieceType + move.capture.player * 6];
-    
-    //Add the piece that's being moved
-    newKey ^= this->zobristPieces_[(move.newPos.col - 'a') * 8 + (move.newPos.row - 1)][move.piece.pieceType + move.piece.player * 6];
 
-    //If you're castling, update the hash accordingly
-    if(move.isCastling){
-        newKey ^= this->zobristCastlingRights_[newGameData & 0b1111];
-        if(move.piece.player == kPlayerWhite){
-            if(move.castlingSide) newGameData &= whiteKingsideMask;
-            else newGameData &= whiteQueensideMask;
+    //If capturing, remove the captured piece
+    if(move.isEnPassant()){
+        ChessPos capturePos = move.newPos;
+        if(move.piece.player() == kPlayerWhite) capturePos.pos -= 8;
+        else capturePos.pos += 8;
+
+        newKey ^= kZobristPieceNums[capturePos.pos][6*move.captured.player()];
+    } else if (move.isCapturing()) newKey ^= kZobristPieceNums[move.newPos.pos][(move.captured.type() - 1) + 6 * move.captured.player()];
+
+    //Remove the piece at oldPos and add the piece at newPos
+    newKey ^= kZobristPieceNums[move.oldPos.pos][move.piece.type() - 1 + 6 * move.piece.player()];
+    newKey ^= kZobristPieceNums[move.newPos.pos][move.piece.type() - 1 + 6 * move.piece.player()];
+
+    //Generate the new data
+    if(!move.isCapturing()) newData = this->movesSinceLastCapture() + 1;
+    newData <<= 8;
+    if(move.isEnPassantEligible()) newData |= (move.newPos.file() - 'a' + 1);
+    newData <<= 4;
+    if(move.isCastling()){
+        if(move.isCastlingKingside()){
+            if(move.piece.player() == kPlayerWhite) castlingInfo &= kBoardDataWhiteKingside;
+            else castlingInfo &= kBoardDataBlackKingside;
         } else {
-            if(move.castlingSide) newGameData &= blackKingsideMask;
-            else newGameData &= blackQueensideMask;
+            if(move.piece.player() == kPlayerWhite) castlingInfo &= kBoardDataWhiteQueenside;
+            else castlingInfo &= kBoardDataBlackQueenside;
         }
-        newKey ^= this->zobristCastlingRights_[newGameData & 0b1111];
     }
-    //Also update the en passant file
-    if(this->gameData_.back() >> 7 || move.isEnPassantEligible){
-        newKey ^= this->zobristEnPassantFile_[(newGameData >> 4) & 0b111];
-        newGameData &= 0b1111;
-    }
-    if(move.isEnPassantEligible){
-        newGameData |= 0b10000000;
-        newGameData &= 0b10001111;
-        newGameData |= (move.pos.col - 'a') << 4;
-        newKey ^= this->zobristEnPassantFile_[(newGameData >> 4) & 0b111];
-    }
-    //Finally, XOR by the blackToMove, since you're switching to the other 
-    newKey ^= this->zobristBlackToMove_;
+    newData |= castlingInfo;
 
-    this->boardHashHistory_.push_back(newKey);
-    this->gameData_.push_back(newGameData);
+    newKey ^= kZobristEnPassantNums[((newKey >> 4) & 0b1111)];
+    newKey ^= kZobristCastlingNums[newKey & 0b1111];
+    newKey ^= kZobristBlackToMoveNum;
+
+    this->boardHistory_.push_back(newKey);
+    this->boardData_.push_back(newData);
 }
-void ChessBoard::addBoardToSeen() {
-    if(!this->seenBoards_.count(this->zobristKey())) this->seenBoards_.emplace(this->zobristKey(), 1);
-    else this->seenBoards_.at(this->zobristKey())++;
+void ChessBoard::addInitialKey() {
+
+    this->boardData_.push_back(0b1111);
+
+    size_t key = 0;
+
+    for(int posInList = 0; posInList < this->pieceNum_; posInList++){
+        key ^= kZobristPieceNums[this->piecePositions_[posInList].pos][(this->pieces_[this->piecePositions_[posInList].pos].type() - 1) + 6 * this->pieces_[this->piecePositions_[posInList].pos].player()];
+    }
+
+    key ^= kZobristCastlingNums[this->boardData_.back() & 0b1111];
+
+    this->boardHistory_.push_back(key);
 }
 
-void ChessBoard::printBoard() const{
+int ChessBoard::turnNum() const {
+    return (this->moves_.size() >> 1) + 1;
+}
+int ChessBoard::playerScore(Player player) const {
+    int scores[2] = {0,0};
+    for(int pos = 0; pos < 64; pos++) scores[this->pieces_[pos].player()] += kPieceValue[this->pieces_[pos].type()];
 
+    return (player == kPlayerWhite ? scores[0] : scores[1]);
+}
+
+void ChessBoard::printBoard() const {
     using std::cout;
     using std::endl;
 
-    ChessPos pos = ChessPos('a',8);
+    int pos;
     cout << this->playerScore(kPlayerWhite) / 100 << " | " << this->playerScore(kPlayerBlack) / 100 << endl;
-    // if(this->hasWon(kPlayerWhite)) cout << "White has won!" << endl;
-    // else if(this->hasWon(kPlayerBlack)) cout << "Black has won!" << endl;
-    // else if(this->stalemate()) cout << "Stalemate!" << endl;
-    // else if(this->inCheck(kPlayerWhite)) cout << "White in check!" << endl;
-    // else if(this->inCheck(kPlayerBlack)) cout << "Black in check!" << endl;
 
-    for(int row = 8; row > 0; row--){ //Do 8..0 instead of 7..-1 because I need to print row
-        pos.col = 'a';
-        cout << (int)pos.row << ' ';
-        for(int col = 0; col < 8; col++){
-            if(this->pieces_.count(pos)){
-                cout << this->pieces_.at(pos).pieceChar();
-            } else {
-                cout << ((row + col) % 2 ? '#' : ' ');
-            }
-            pos.col++;
+    for(int rank = 7; rank >= 0; rank--){
+        cout << rank + 1 << ' ';
+        for(int file = 0; file < 8; file++){
+            pos = rank * 8 + file;
+            if(this->piece(pos).data) cout << this->piece(pos).pieceChar();
+            else cout << (((rank + file) & 1) ? ' ' : '#');
+            cout << ' ';
         }
         cout << endl;
-        pos.row -= 1;
     }
     cout << "  ";
     for(char col = 'a'; col <= 'h'; col++){
-        cout << col;
+        cout << col << ' ';
     }
     cout << endl;
+
     if(!this->moves_.empty()){
-        if(this->lastMove().piece.player == kPlayerWhite) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
+        if(this->lastMove().piece.player() == kPlayerWhite) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
         else cout << this->turnNum()-1 << ": " << this->moves_[this->moves_.size()-2].str() << ' ' << this->moves_[this->moves_.size()-1].str() << endl;
     }
 
@@ -230,116 +197,103 @@ void ChessBoard::printBoard() const{
 void ChessBoard::printMoves() const {
     using std::cout;
     using std::endl;
+    if(this->turnNum() == 1){
+        cout << "1: " << endl;
+        return;
+    }
     for(int turn = 1; turn < this->turnNum(); turn++) cout << turn << ": " << this->moves_.at((turn-1) * 2).str() << ' ' << this->moves_.at(((turn-1) * 2) + 1).str() << endl;
 
-    if(this->lastMove().piece.player == kPlayerWhite) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
+    if(this->blackToMove_) cout << this->turnNum() << ": " << this->lastMove().str() << endl;
 }
 
-void ChessBoard::addPiece(ChessPos pos, ChessPiece piece){
-    //std::cout << "Adding piece " << piece.pieceChar() << " at location " << pos.str() << std::endl;
-    this->pieces_.insert(pair<ChessPos,ChessPiece>(pos,piece));
-}
-void ChessBoard::removePiece(ChessPos pos){
-    //std::cout << "Removing piece at " << pos.str() << std::endl;
-    this->pieces_.erase(pos);
-}
-
-//Both of these already assume that the muve is valid
-void ChessBoard::doMove(ChessMove move, bool updateHash){
-
-    //std::cout << this->zobristKey_ << std::endl;
-    //this->printBoard();
-
-    //Remove the piece being captured
-    if(move.isEnPassant){
-        if(move.piece.player == kPlayerWhite){
-            move.newPos.row--;
-            this->removePiece(move.newPos);
-            move.newPos.row++;
-        } else {
-            move.newPos.row++;
-            this->removePiece(move.newPos);
-            move.newPos.row--;
+//WARNING: if it's an invalid position, it will break!
+void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
+    if(piece.type() == kPieceKing){
+        if(piece.player() == kPlayerWhite) {
+            if(this->whiteKingPos_.pos == -1) this->whiteKingPos_ = pos;
+            else return;
+        }
+        else {
+            if(this->blackKingPos_.pos == -1) this->blackKingPos_ = pos;
+            else return;
         }
     }
-    else if(move.capture.pieceType != kPieceNone) this->removePiece(move.newPos);
-
-    //Move the piece being moved
-    this->removePiece(move.pos);
-    this->addPiece(move.newPos, move.piece);
-
-    //Also move rook if there's castling
-    if(move.isCastling){
-        ChessMove rookMove;
-        if(move.newPos.col == 'b') rookMove = ChessMove(this->piece(ChessPos('a',move.pos.row)),ChessPos('a',move.pos.row),ChessPos('c',move.pos.row));
-        else rookMove = ChessMove(this->piece(ChessPos('h',move.pos.row)),ChessPos('h',move.pos.row),ChessPos('f',move.pos.row));
-
-        this->doMove(rookMove, false);
+    this->pieces_[pos.pos] = piece;
+    this->piecePositions_[this->pieceNum_] = pos.pos;
+    this->pieceNum_++;
+}
+//WARNING: if it's an invalid position, it will break!
+void ChessBoard::removePiece(ChessPos pos) {
+    if(this->piece(pos).type() == kPieceKing){
+        if(this->piece(pos).player() == kPlayerWhite) this->whiteKingPos_ = ChessPos();
+        else this->blackKingPos_ = ChessPos();
     }
-    this->pieces_.at(move.newPos).moveNum++; //I set this later so that the previous check works
+    this->pieces_[pos.pos] = ChessPiece();
 
-    // ChessPosSet attacking = this->getAttackedByPiece(move.newPos);
-    // if(attacking.count(this->whiteKingPos_)) this->whiteInCheck_ = true;
-    // else if(attacking.count(this->blackInCheck_)) this->blackInCheck_ = true;
+    int posInList = 0;
+    while(this->piecePositions_[posInList] != pos.pos) posInList++;
+    this->piecePositions_[posInList] = this->piecePositions_[this->pieceNum_];
+    this->pieceNum_--;
+}
+//WARNING: if either of the positions are invalid, it will not work!
+void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
+    if(this->piece(oldPos).type() == kPieceKing){
+        if(this->piece(oldPos).player() == kPlayerWhite) this->whiteKingPos_ = newPos;
+        else this->blackKingPos_ = newPos;
+    }
+    this->pieces_[newPos.pos] = this->pieces_[oldPos.pos];
+    this->pieces_[oldPos.pos] = ChessPiece();
+    this->pieces_[newPos.pos].data |= 0b10000; //Set it so that the piece has moved
+}
 
-    // ChessPosSet attacks = this->attacked_.at(move.pos);
-    // for(const ChessPos &attackedBy : attacks){
-    //     this->updatePieceAttacking(attackedBy);
-    // }
-    if(updateHash) {
+void ChessBoard::doMove(ChessMove move, bool update) {
+    if(move.isCastling()){
+        if(move.isCastlingKingside()) this->doMove(ChessMove(this->piece(ChessPos('h',move.oldPos.rank())),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
+        else this->doMove(ChessMove(this->piece(ChessPos('a',move.oldPos.rank())),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
+    }
+
+    if(move.isEnPassant()){
+        ChessPos removePos = move.newPos;
+        if(move.piece.player() == kPlayerWhite) removePos.pos -= 8;
+        else removePos.pos += 8;
+
+        this->removePiece(removePos);
+    }
+
+    this->movePiece(move.oldPos, move.newPos);
+
+    if(update){
+        this->blackToMove_ = !this->blackToMove_;
         this->moves_.push_back(move);
-        this->updateZobrist(move);
-        this->addBoardToSeen();
+        this->addNewKey(move);
     }
-    //for(size_t key : this->boardHashHistory_) std::cout << "test " << key << std::endl;
-    //std::cout << std::endl;
-    //std::cout << this->zobristKey_ << std::endl;
-    //this->printBoard();
+
 
 }
-void ChessBoard::undoMove(ChessMove move, bool updateHash){
-
-    if(move.isCastling){
-        if(move.castlingSide) this->undoMove(ChessMove(this->piece(ChessPos('f',move.newPos.row)),ChessPos('h',move.newPos.row),ChessPos('f',move.newPos.row)), false);
-        else this->undoMove(ChessMove(this->piece(ChessPos('c',move.newPos.row)),ChessPos('a',move.newPos.row),ChessPos('c',move.newPos.row)), false);
+void ChessBoard::undoMove(ChessMove move, bool update) {
+    if(move.isCastling()){
+        if(move.isCastlingKingside()) this->undoMove(ChessMove(this->piece(ChessPos('f',move.oldPos.rank())),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
+        else this->undoMove(ChessMove(this->piece(ChessPos('c',move.oldPos.rank())),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
     }
 
-    if(move.isEnPassant){
-        if(move.piece.player == kPlayerWhite){
-            move.newPos.row--;
-            this->addPiece(move.newPos, move.capture);
-            move.newPos.row++;
-        } else {
-            move.newPos.row++;
-            this->addPiece(move.newPos, move.capture);
-            move.newPos.row--;
-        }
-        this->removePiece(move.newPos);
-        this->addPiece(move.pos,move.piece);
-        
-    }
-    else {
-        if(move.isPromoting) move.piece.pieceType = kPiecePawn;
+    this->movePiece(move.newPos, move.oldPos);
+    this->pieces_[move.oldPos.pos] = move.piece;
 
-        this->removePiece(move.newPos);
-        this->addPiece(move.pos, move.piece);
+    if(move.isEnPassant()){
+        ChessPos removePos = move.newPos;
+        if(move.piece.player() == kPlayerWhite) removePos.pos -= 8;
+        else removePos.pos += 8;
 
-        if(move.capture.pieceType != kPieceNone) this->addPiece(move.newPos, move.capture);
-    }
+        this->addPiece(removePos, move.captured);
+    } else if (move.isCapturing()) this->addPiece(move.newPos, move.captured);
 
-    if(updateHash) {
-        this->seenBoards_.at(this->zobristKey())--;
+    if(update){
         this->moves_.pop_back();
-        this->gameData_.pop_back();
-        this->boardHashHistory_.pop_back();
-
+        this->boardHistory_.pop_back();
+        this->boardData_.pop_back();
+        this->blackToMove_ = !this->blackToMove_;
     }
 }
-void ChessBoard::undoLastMove(bool updateHash){
-    this->undoMove(this->moves_.back(), updateHash);
-}
-
-std::size_t ChessBoardHash::operator()(ChessBoard const& board) const {
-    //return board.hash();
-    return board.zobristKey();
+void ChessBoard::undoLastMove() {
+    this->undoMove(this->lastMove());
 }

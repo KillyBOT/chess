@@ -402,7 +402,7 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                 move.captured = ChessPiece();
                 move.moveData = kMoveNone;
                 move.newPos = kRays[start.pos][dir][0];
-                //std::cout << start.str() << '\t' << dir << '\t' << this->attacked_[move.newPos.pos] << std::endl;
+                //std::cout << move.newPos.str() << '\t' << this->attacked_[move.newPos.pos] << std::endl;
                 if(!this->attacked_[move.newPos.pos] && (!this->board_->hasPieceAtPos(move.newPos) || this->willMoveCapture(move))){
                     //std::cout << "Adding move" << std::endl;
                     moves.push_back(move);
@@ -662,7 +662,42 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
     return this->hasLost();
 }
 
-const vector<ChessMove> &MoveGenerator::getMoves() const {
+vector<ChessMove> MoveGenerator::getMoves() const {
+    //std::cout << "Generating moves for board:" << std::endl;
+    //std::cout << this->board_->pieceNum() << std::endl;
+    //this->board_->printBoard();
+
+    vector<ChessMove> moves;
+
+    for(int i = 0; i < this->board_->pieceNum(); i++){
+        ChessPos pos = this->board_->piecePositions()[i];
+        ChessPiece piece = this->board_->piece(pos);
+        if(piece.player() == this->player_) this->genMovesForPiece(moves, piece, pos);
+    }
+
+    if(this->hasForced_){
+        //std::cout << "In check!" << std::endl;
+        vector<ChessMove> filteredMoves;
+        for(ChessMove move : moves){
+            if(move.piece.type() == kPieceKing) filteredMoves.push_back(move);
+            else if(!this->cannotMove_ && this->forced_[move.newPos.pos]) filteredMoves.push_back(move);
+        }
+
+        moves = filteredMoves;
+    }
+
+    // std::cout << "Moves generated: ";
+    // for(ChessMove move : moves) std::cout << move.str() << ", ";
+    // std::cout << std::endl;
+
+    return moves;
+}
+vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board) {
+    this->setBoard(board);
+    return this->getMoves();
+}
+
+/*const vector<ChessMove> &MoveGenerator::getMoves() const {
 
     if(!MoveGenerator::knownBoards_.count(this->board_->key())){
 
@@ -706,7 +741,7 @@ const vector<ChessMove> &MoveGenerator::getMoves(ChessBoard &board) {
         return this->getMoves();
     }
     else return MoveGenerator::knownBoards_.at(board.key());
-}
+}*/
 
 void MoveGenerator::setBoard(ChessBoard &board) {
 

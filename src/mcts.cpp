@@ -98,10 +98,12 @@ Player MCTS::simulate(ChessBoard &leaf) {
         //leaf.printBoard();
         //mg.setBoard(leaf);
         //mg.printAttacked();
+        mg.setBoard(leaf);
         if(mg.fiftyMoveRuleStalemate(leaf)) return 2;
-        const vector<ChessMove> &moves = mg.getMoves(leaf);
+        const vector<ChessMove> &moves = mg.getMoves();
+        //for(const ChessMove &move : moves) std::cout << move.str() << std::endl;
         if(moves.empty()) {
-            if(mg.hasLost()) return leaf.opponent();
+            if(mg.inCheck()) return leaf.opponent();
             else return 2;
         }
         leaf.doMove(moves[rand() % moves.size()]);

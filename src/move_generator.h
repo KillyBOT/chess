@@ -55,8 +55,10 @@ class MoveGenerator {
     bool hasLost() const;
     bool hasLost(ChessBoard &board);
 
-    const vector<ChessMove> &getMoves() const;
-    const vector<ChessMove> &getMoves(ChessBoard &board);
+    vector<ChessMove> getMoves() const;
+    vector<ChessMove> getMoves(ChessBoard &board);
+    // const vector<ChessMove> &getMoves() const;
+    // const vector<ChessMove> &getMoves(ChessBoard &board);
 
     void setBoard(ChessBoard &board);
     void printAttacked() const;

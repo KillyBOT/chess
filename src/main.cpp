@@ -25,9 +25,9 @@ int main()
     MoveGenerator mg;
 
     // ChessBoard board(false);
-    // board.addPiece(ChessPos("a1"),ChessPiece(kPieceKing,kPlayerWhite));
-    // board.addPiece(ChessPos("a8"),ChessPiece(kPieceRook,kPlayerBlack));
-    // board.addPiece(ChessPos("b4"),ChessPiece(kPieceQueen,kPlayerWhite));
+    // board.addPiece(ChessPos("c2"),ChessPiece(kPieceKing,kPlayerWhite));
+    // board.addPiece(ChessPos("d4"),ChessPiece(kPieceKing,kPlayerBlack));
+    // board.addPiece(ChessPos("a3"),ChessPiece(kPieceKnight, kPlayerBlack));
 
     // board.printBoard();
     // mg.setBoard(board);
@@ -35,11 +35,15 @@ int main()
     // mg.printForced();
     // cout << mg.inCheck(board) << endl;
     // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
+    // mg.setBoard(board);
+    // board.printBoard();
+    // mg.printAttacked();
+    // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
 
     ChessBoard board;
     board.printBoard();
 
-    MCTS mcts = MCTS(500);
+    MCTS mcts = MCTS(1000);
 
     mg.setBoard(board);
     srand(time(NULL));
@@ -57,13 +61,12 @@ int main()
 
         const vector<ChessMove> &moves = mg.getMoves(board);
         board.doMove(moves[rand() % moves.size()]);
-        mg.setBoard(board);
         board.printBoard();
+        mg.setBoard(board);
     }
-
+    board.printBoard();
     if(mg.hasLost()) cout << "Lost!" << endl;
     else cout << "Stalemate!" << endl;
-
 
     // cout << ChessPos("a3").pos << endl;
     // cout << ChessPos("a3").str() << endl;

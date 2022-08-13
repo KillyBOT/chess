@@ -78,7 +78,7 @@ ChessBoard::ChessBoard(bool initBoard){
 }
 ChessBoard::ChessBoard(const ChessBoard &board) {
     memcpy(this->pieces_,board.pieces_, 64 * sizeof(ChessPiece));
-    memcpy(this->piecePositions_, board.piecePositions_, 64);
+    memcpy(this->piecePositions_, board.piecePositions_, 64 * sizeof(ChessPos));
     memcpy(this->pieceMap_, board.pieceMap_, 64);
 
     this->boardData_ = board.boardData_;
@@ -252,7 +252,6 @@ ChessPiece ChessBoard::removePiece(ChessPos pos) {
     else if(this->blackKingPos_ == pos) this->blackKingPos_ = ChessPos();
     //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
 
-
     this->pieces_[pos.pos] = ChessPiece();
 
     char pieceInd = this->pieceMap_[pos.pos];
@@ -274,7 +273,6 @@ void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
 
     this->pieces_[newPos.pos] = this->pieces_[oldPos.pos];
     this->pieces_[oldPos.pos] = ChessPiece();
-    if(!this->pieces_[newPos.pos].hasMoved()) this->pieces_[newPos.pos].data |= 0b10000;
 
     char pieceInd = this->pieceMap_[oldPos.pos];
     this->piecePositions_[pieceInd] = newPos;
@@ -300,6 +298,8 @@ void ChessBoard::doMove(ChessMove move, bool update) {
     if(move.isPromoting()) {
         this->pieces_[move.newPos.pos].data &= 0b11111000;
         this->pieces_[move.newPos.pos].data |= move.promotionType();
+    } else {
+        this->pieces_[move.newPos.pos].data |= 0b10000;
     }
 
     if(update){
@@ -312,11 +312,11 @@ void ChessBoard::doMove(ChessMove move, bool update) {
 }
 void ChessBoard::undoMove(ChessMove move, bool update) {
     if(move.isCastling()){
-        if(move.isCastlingKingside()) this->undoMove(ChessMove(this->piece(ChessPos('f',move.oldPos.rank())),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
-        else this->undoMove(ChessMove(this->piece(ChessPos('c',move.oldPos.rank())),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
+        if(move.isCastlingKingside()) this->undoMove(ChessMove(ChessPiece(kPieceRook, move.piece.player()),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
+        else this->undoMove(ChessMove(ChessPiece(kPieceRook, move.piece.player()),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
     }
 
-    this->removePiece(move.newPos.pos);
+    this->removePiece(move.newPos);
     this->addPiece(move.oldPos, move.piece);
 
     if(move.isEnPassant()){

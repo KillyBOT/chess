@@ -16,6 +16,8 @@ using std::size_t;
 
 double sqrt2 = sqrt(2);
 
+MoveGenerator mg;
+
 MCTSNode::MCTSNode(size_t val, Player player, size_t parent){
     this->val = val;
     this->parent = parent;
@@ -36,16 +38,16 @@ void MCTS::select(ChessBoard &root){
     ChessMove best;
     double parentSims;
 
-    if(this->nodes_.count(root.zobristKey())) parentSims = this->nodes_.at(root.zobristKey()).sims;
+    if(this->nodes_.count(root.key())) parentSims = this->nodes_.at(root.key()).sims;
     //root.printBoard();
 
-    for(ChessMove move : this->getMoves(root)){
+    for(ChessMove move : mg.getMoves(root)){
         //std::cout << root.zobristKey() << std::endl;
         //root.printBoard();
         root.doMove(move);
 
-        if(this->nodes_.count(root.zobristKey())){
-            UCT = this->nodes_.at(root.zobristKey()).calcUCT(parentSims);
+        if(this->nodes_.count(root.key())){
+            UCT = this->nodes_.at(root.key()).calcUCT(parentSims);
 
             if(UCT > highestVal) {
                 best = move;
@@ -70,14 +72,14 @@ void MCTS::select(ChessBoard &root){
 
 //Create a new child
 size_t MCTS::expand(ChessBoard &leaf) {
-    size_t parentKey = leaf.zobristKey();
-    for(ChessMove move : this->getMoves(leaf)){
+    size_t parentKey = leaf.key();
+    for(ChessMove move : mg.getMoves(leaf)){
         leaf.doMove(move);
-        if(!this->nodes_.count(leaf.zobristKey())){
+        if(!this->nodes_.count(leaf.key())){
             //std::cout << leaf.zobristKey() << '\t' << parentKey << std::endl;
             //leaf.printBoard();
-            this->nodes_.emplace(leaf.zobristKey(),MCTSNode(leaf.zobristKey(), leaf.player(), parentKey));
-            return leaf.zobristKey();
+            this->nodes_.emplace(leaf.key(),MCTSNode(leaf.key(), leaf.player(), parentKey));
+            return leaf.key();
         }
         leaf.undoLastMove();
     }
@@ -88,23 +90,25 @@ size_t MCTS::expand(ChessBoard &leaf) {
 //Select a random child, and do the simulation
 Player MCTS::simulate(ChessBoard &leaf) {
 
-    vector<ChessMove> moves;
     //MoveGenerator mg;
     //mg.setBoard(leaf);
 
     srand(time(NULL));
     while (true){
-        moves = this->getMoves(leaf);
+        //leaf.printBoard();
+        //mg.setBoard(leaf);
+        //mg.printAttacked();
+        if(mg.fiftyMoveRuleStalemate(leaf)) return 2;
+        const vector<ChessMove> &moves = mg.getMoves(leaf);
         if(moves.empty()) {
-            MoveGenerator mg(leaf);
             if(mg.hasLost()) return leaf.opponent();
-            else return kPlayerNone;
+            else return 2;
         }
         leaf.doMove(moves[rand() % moves.size()]);
         //leaf = this->getChildren(leaf)[rand() % this->getChildren(leaf).size()];
     }
 
-    return kPlayerNone;
+    return 2;
 }
 void MCTS::backpropogate(size_t key, Player win){
 
@@ -114,8 +118,7 @@ void MCTS::backpropogate(size_t key, Player win){
         this->nodes_.at(key).sims++;
         key = this->nodes_.at(key).parent;
     }
-    if(win == kPlayerNone) this->nodes_.at(key).wins++;
-    else if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins += 2;
+    if(win == this->nodes_.at(key).player) this->nodes_.at(key).wins ++;
     this->nodes_.at(key).sims++;
 }
 
@@ -134,7 +137,7 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
 
     ChessMove bestMove;
     int maxSims = 0;
-    size_t rootKey = board.zobristKey();
+    size_t rootKey = board.key();
 
     // if(!this->nodes_.count(board)){
     //     this->nodes_.insert(pair<ChessBoard,MCTSNode>(board,MCTSNode(board,board)));
@@ -158,11 +161,11 @@ ChessMove MCTS::findOptimalMove(ChessBoard &board){
         //std::cout << "Finished round " << x+1 << std::endl;
     }
 
-    for(ChessMove move : this->getMoves(board)){
+    for(ChessMove move : mg.getMoves(board)){
         board.doMove(move);
-        if(this->nodes_.count(board.zobristKey()) && this->nodes_.at(board.zobristKey()).sims > maxSims){
+        if(this->nodes_.count(board.key()) && this->nodes_.at(board.key()).sims > maxSims){
             bestMove = move;
-            maxSims = this->nodes_[board.zobristKey()].sims;
+            maxSims = this->nodes_[board.key()].sims;
         }
         board.undoLastMove();
     }

@@ -43,6 +43,9 @@ class MoveGenerator {
 
     MoveGenerator();
 
+    bool fiftyMoveRuleStalemate() const;
+    bool fiftyMoveRuleStalemate(ChessBoard &board) const;
+
     bool stalemate() const;
     bool stalemate(ChessBoard &board);
 

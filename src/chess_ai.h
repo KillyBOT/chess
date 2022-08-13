@@ -19,9 +19,11 @@ class ChessAI {
 
     public:
 
-    ChessAI(string name);
+    ChessAI(string name) : name_{name} {};
 
-    string name() const;
+    inline string name() const {
+        return this->name_;
+    }
 
     virtual ChessMove findOptimalMove(ChessBoard &board) = 0;
 

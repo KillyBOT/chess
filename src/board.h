@@ -33,12 +33,12 @@ class ChessBoard {
     ChessPiece pieces_[64];
     char pieceMap_[64];
     ChessPos piecePositions_[64];
-    int pieceNum_;
 
     vector<ChessMove> moves_;
     vector<unsigned short> boardData_;
     vector<size_t> boardHistory_;
-
+    
+    int pieceNum_;
     bool blackToMove_;
     ChessPos whiteKingPos_, blackKingPos_;
 
@@ -53,10 +53,10 @@ class ChessBoard {
         return this->pieceNum_;
     }
     inline Player player() const {
-        return this->blackToMove_;
+        return this->blackToMove_ ? kPlayerBlack : kPlayerWhite;
     }
     inline Player opponent() const {
-        return !this->blackToMove_;
+        return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
     }
     inline bool hasPieceAtPos(ChessPos pos) const {
         return this->pieces_[pos.pos].data;

@@ -9,6 +9,7 @@
 #include "ray.h"
 #include "board.h"
 #include "move_generator.h"
+#include "mcts.h"
 
 int main()
 {
@@ -36,16 +37,25 @@ int main()
     // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
 
     ChessBoard board;
-
-    cout << board.key() << endl;
     board.printBoard();
+
+    MCTS mcts = MCTS(500);
 
     mg.setBoard(board);
     srand(time(NULL));
+    board.printBoard();
+
     while(!mg.hasLost() && !mg.stalemate()){
         //mg.printAttacked();
         //mg.printForced();
-        const vector<ChessMove> &moves = mg.getMoves();
+
+        board.doMove(mcts.findOptimalMove(board));
+        board.printBoard();
+
+        mg.setBoard(board);
+        if(mg.hasLost() || mg.stalemate()) break;
+
+        const vector<ChessMove> &moves = mg.getMoves(board);
         board.doMove(moves[rand() % moves.size()]);
         mg.setBoard(board);
         board.printBoard();

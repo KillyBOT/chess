@@ -25,6 +25,7 @@ struct ChessMove {
     ChessPiece captured;
     Byte moveData;
     
+    ChessMove();
     ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos);
     ChessMove(const ChessMove &move);
 

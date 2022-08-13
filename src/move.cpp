@@ -3,6 +3,13 @@
 
 #include "move.h"
 
+ChessMove::ChessMove(){
+    this->piece = ChessPiece();
+    this->captured = ChessPiece();
+    this->oldPos = ChessPos();
+    this->newPos = ChessPos();
+    this->moveData = kMoveNone;
+}
 ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
     this->captured = ChessPiece();

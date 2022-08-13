@@ -59,7 +59,7 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
 }
 
 void MoveGenerator::addPiecesInDir(vector<ChessPos> &positions, ChessPos start, int dir) const{
-    std::cout << start.str() << '\t' << dir << '\t' << kRays[start.pos][dir].size() << std::endl;
+    //std::cout << start.str() << '\t' << dir << '\t' << kRays[start.pos][dir].size() << std::endl;
     for(ChessPos &pos : kRays[start.pos][dir]){
         if(this->board_->hasPieceAtPos(pos)) positions.push_back(pos);
     }
@@ -402,7 +402,11 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                 move.captured = ChessPiece();
                 move.moveData = kMoveNone;
                 move.newPos = kRays[start.pos][dir][0];
-                if(!this->attacked_[move.newPos.pos] && (!this->board_->hasPieceAtPos(move.newPos) || this->willMoveCapture(move)))moves.push_back(move);
+                //std::cout << start.str() << '\t' << dir << '\t' << this->attacked_[move.newPos.pos] << std::endl;
+                if(!this->attacked_[move.newPos.pos] && (!this->board_->hasPieceAtPos(move.newPos) || this->willMoveCapture(move))){
+                    //std::cout << "Adding move" << std::endl;
+                    moves.push_back(move);
+                }
             }
         }
 
@@ -439,6 +443,9 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
 }
 
 void MoveGenerator::setPinned() {
+
+    memset(this->pinned_, false, 576);
+
     vector<ChessPos> piecesInDir;
     
     for(int dir = 0; dir < 4; dir++){
@@ -473,16 +480,17 @@ void MoveGenerator::setPinned() {
 void MoveGenerator::setAttacked() {
     memset(this->attacked_, false, 64);
 
-    const ChessPos *positions = this->board_->piecePositions();
-
     for(int i = 0; i < this->board_->pieceNum(); i++){
-        ChessPos pos = positions[i];
+        ChessPos pos = this->board_->piecePositions()[i];
         ChessPiece piece = this->board_->piece(pos);
         if(piece.player() == this->opponent_) this->setAttackedForPiece(piece, pos);
     }
 }
 
 void MoveGenerator::setForced() {
+
+    memset(this->forced_, false, 64);
+
     this->cannotMove_ = false;
     this->hasForced_ = false;
 
@@ -630,6 +638,13 @@ bool MoveGenerator::stalemate(ChessBoard &board) {
     return this->stalemate();
 }
 
+bool MoveGenerator::fiftyMoveRuleStalemate() const {
+    return this->board_->movesSinceLastCapture() >= 100;
+}
+bool MoveGenerator::fiftyMoveRuleStalemate(ChessBoard &board) const {
+    return board.movesSinceLastCapture() >= 100;
+}
+
 bool MoveGenerator::inCheck() const {
     return this->attacked_[this->kingPos_.pos];
 }
@@ -686,22 +701,22 @@ const vector<ChessMove> &MoveGenerator::getMoves() const {
     
 }
 const vector<ChessMove> &MoveGenerator::getMoves(ChessBoard &board) {
-    this->setBoard(board);
-
-    return this->getMoves();
+    if(!MoveGenerator::knownBoards_.count(board.key())) {
+        this->setBoard(board);
+        return this->getMoves();
+    }
+    else return MoveGenerator::knownBoards_.at(board.key());
 }
 
 void MoveGenerator::setBoard(ChessBoard &board) {
-
-    memset(this->attacked_, false, 64);
-    memset(this->pinned_, false, 576);
-    memset(this->forced_, false, 64);
 
     this->board_ = &board;
     this->player_ = board.player();
     this->opponent_ = board.opponent();
     this->doEnPassantCheck_ = board.enPassantFile();
     this->kingPos_ = board.kingPos(this->player_);
+
+    //std::cout << this->kingPos_.str() << std::endl;
 
     this->setAttacked();
     this->setPinned();

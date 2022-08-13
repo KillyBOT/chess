@@ -78,7 +78,8 @@ ChessBoard::ChessBoard(bool initBoard){
 }
 ChessBoard::ChessBoard(const ChessBoard &board) {
     memcpy(this->pieces_,board.pieces_, 64 * sizeof(ChessPiece));
-    memcpy(this->piecePositions_, board.piecePositions_, 64 * sizeof(Byte));
+    memcpy(this->piecePositions_, board.piecePositions_, 64);
+    memcpy(this->pieceMap_, board.pieceMap_, 64);
 
     this->boardData_ = board.boardData_;
     this->boardHistory_ = board.boardHistory_;
@@ -86,6 +87,8 @@ ChessBoard::ChessBoard(const ChessBoard &board) {
 
     this->blackToMove_ = board.blackToMove_;
     this->pieceNum_ = board.pieceNum_;
+    this->whiteKingPos_ = board.whiteKingPos_;
+    this->blackKingPos_ = board.blackKingPos_;
 }
 
 void ChessBoard::addNewKey(ChessMove move) {
@@ -215,6 +218,9 @@ void ChessBoard::printMoves() const {
 
 //WARNING: if it's an invalid position, it will break!
 void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
+
+   // std::cout << "Adding piece " << piece.pieceChar() << " at " << pos.str() << std::endl;
+
     if(piece.type() == kPieceKing){
         if(piece.player() == kPlayerWhite) {
             if(this->whiteKingPos_.pos == -1) this->whiteKingPos_ = pos;
@@ -224,6 +230,8 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
             if(this->blackKingPos_.pos == -1) this->blackKingPos_ = pos;
             else return;
         }
+
+        //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
     }
 
     this->pieces_[pos.pos] = piece;
@@ -235,10 +243,15 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
 //WARNING: if it's an invalid position, it will break!
 ChessPiece ChessBoard::removePiece(ChessPos pos) {
 
+    //std::cout << "Removing piece at " << pos.str() << std::endl;
+
     ChessPiece removed = this->piece(pos);
 
+    //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
     if(this->whiteKingPos_ == pos) this->whiteKingPos_ = ChessPos();
     else if(this->blackKingPos_ == pos) this->blackKingPos_ = ChessPos();
+    //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
+
 
     this->pieces_[pos.pos] = ChessPiece();
 
@@ -251,8 +264,13 @@ ChessPiece ChessBoard::removePiece(ChessPos pos) {
 }
 //WARNING: if either of the positions are invalid, it will not work!
 void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
+    //std::cout << "Moving piece at " << oldPos.str() << " to " << newPos.str() << std::endl;
+    //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
+
     if(oldPos == this->whiteKingPos_) this->whiteKingPos_ = newPos;
     else if (oldPos == this->blackKingPos_) this->blackKingPos_ = newPos;
+
+    //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
 
     this->pieces_[newPos.pos] = this->pieces_[oldPos.pos];
     this->pieces_[oldPos.pos] = ChessPiece();
@@ -278,6 +296,7 @@ void ChessBoard::doMove(ChessMove move, bool update) {
     } else if(move.isCapturing()) this->removePiece(move.newPos);
 
     this->movePiece(move.oldPos, move.newPos);
+
     if(move.isPromoting()) {
         this->pieces_[move.newPos.pos].data &= 0b11111000;
         this->pieces_[move.newPos.pos].data |= move.promotionType();

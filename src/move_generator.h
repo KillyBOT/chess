@@ -12,26 +12,26 @@ using std::unordered_set;
 
 class MoveGenerator {
 
-    Player player_, opponent_;
-    int pieceNum_;
-    int movesSinceLastCapture_;
-    Byte enPassantFile_;
-    ChessPiece *pieces_;
-    ChessPos *piecePositions_;
-    ChessPos kingPos_;
+    Player player_;
+    Player opponent_;
+    const ChessBoard *board_;
+    bool doEnPassantCheck_;
 
     bool attacked_[64];
-    bool pinned_[64];
+    bool pinned_[64][9];
+    bool forced_[65];
 
     bool willMoveCapture(ChessMove &move) const;
     bool enPassantCheck(ChessMove &move) const;
 
-    void setAttackedForPiece(ChessPiece piece, ChessPos pos);
+    void addPiecesInDir(vector<ChessPos> &positions, ChessPos start, int dir) const;
 
-    vector<ChessMove> genMovesForPiece(ChessPiece piece, ChessPos pos) const;
+    void setAttackedForPiece(ChessPiece piece, ChessPos pos);
+    void genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece, ChessPos start) const;
 
     void setPinned();
     void setAttacked();
+    void setForced();
 
     public:
 

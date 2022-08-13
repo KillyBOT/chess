@@ -12,6 +12,10 @@ ChessPiece::ChessPiece(const ChessPiece &piece) {
     this->data = piece.data;
 }
 
+bool ChessPiece::operator==(const ChessPiece &piece) const {
+    return this->data == piece.data;
+}
+
 char ChessPiece::pieceChar(bool usePlayer) const {
     char c;
     switch(this->type()) {

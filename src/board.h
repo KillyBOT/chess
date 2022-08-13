@@ -42,7 +42,6 @@ class ChessBoard {
     ChessPos whiteKingPos_, blackKingPos_;
 
     void addNewKey(ChessMove move);
-    void addInitialKey();
 
     public:
 
@@ -59,7 +58,7 @@ class ChessBoard {
         return !this->blackToMove_;
     }
     inline bool hasPieceAtPos(ChessPos pos) const {
-        return pos.inBounds() && this->pieces_[pos.pos].data;
+        return this->pieces_[pos.pos].data;
     }
     inline const ChessPiece &piece(ChessPos pos) const {
         return this->pieces_[pos.pos];
@@ -98,6 +97,7 @@ class ChessBoard {
     void removePiece(ChessPos pos);
     //WARNING: if either of the positions are invalid, it will not work!
     void movePiece(ChessPos oldPos, ChessPos newPos);
+    void resetKeys();
 
     void doMove(ChessMove move, bool update = true);
     void undoMove(ChessMove move, bool update = true);

@@ -16,6 +16,8 @@ struct ChessPiece {
     ChessPiece(PieceType type, Player player);
     ChessPiece(const ChessPiece &piece);
 
+    bool operator==(const ChessPiece &piece) const;
+
     inline PieceType type() const {
         return (this->data & 0b111);
     }

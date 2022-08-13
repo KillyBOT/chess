@@ -35,7 +35,7 @@ char ChessPos::file() const {
 std::string ChessPos::str() const {
     std::string str;
     str += this->file();
-    str += this->rank() + '0';
+    str += this->rank();
     return str;
 }
 

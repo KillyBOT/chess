@@ -3,9 +3,11 @@
 #include <iostream>
 
 #include "ray.h"
+#include "pos.h"
 
-std::vector<int> kRays[64][8];
-std::vector<int> kKnightPositionTable[64];
+std::vector<ChessPos> kRays[64][8];
+std::vector<ChessPos> kKnightPositionTable[64];
+
 //N W S E NW SW SE NE
 static const int kDeltaDir[8] = {8, -1, -8, 1, 7, -9, -7, 9};
 
@@ -24,10 +26,10 @@ void initRayTable() {
 
         //North
         for(int dir = 0; dir < 8; dir++){
-            kRays[start][dir] = std::vector<int>();
+            kRays[start][dir] = std::vector<ChessPos>();
             //std::cout << start << '\t' << dir << '\t' << distArray[dir] << std::endl;
             for(int i = 1; i <= distArray[dir]; i++){
-                kRays[start][dir].push_back(start + i * kDeltaDir[dir]);
+                kRays[start][dir].push_back(ChessPos(start + i * kDeltaDir[dir]));
             }
         }
     }
@@ -38,17 +40,39 @@ void initKnightPositionTable() {
     int dRank = 1;
     int dFile = 2;
     for(int start = 0; start < 64; start++){
-        kKnightPositionTable[start] = std::vector<int>();
+        kKnightPositionTable[start] = std::vector<ChessPos>();
         for(int rot = 0; rot < 4; rot++){
             file = start & 0b111;
             rank = start >> 3;
             //std::cout << rank + dRank << '\t' << file + dFile << std::endl;
-            if(file + dFile >= 0 && file + dFile < 8 && rank + dRank >= 0 && rank + dRank < 8) kKnightPositionTable[start].push_back(((rank + dRank) << 3) + (file + dFile));
-            if(file + dRank >= 0 && file + dRank < 8 && rank + dFile >= 0 && rank + dFile < 8) kKnightPositionTable[start].push_back(((rank + dFile) << 3) + (file + dRank));
+            if(file + dFile >= 0 && file + dFile < 8 && rank + dRank >= 0 && rank + dRank < 8) kKnightPositionTable[start].push_back(ChessPos(((rank + dRank) << 3) + (file + dFile)));
+            if(file + dRank >= 0 && file + dRank < 8 && rank + dFile >= 0 && rank + dFile < 8) kKnightPositionTable[start].push_back(ChessPos(((rank + dFile) << 3) + (file + dRank)));
 
             tmp = dRank;
             dRank = -dFile;
             dFile = tmp;
         }
     }
+}
+
+char opposite_dir(char dir) {
+    switch(dir){
+        case kRayDirN:
+        return kRayDirS;
+        case kRayDirS:
+        return kRayDirN;
+        case kRayDirE:
+        return kRayDirW;
+        case kRayDirW:
+        return kRayDirE;
+        case kRayDirNE:
+        return kRayDirSW;
+        case kRayDirSW:
+        return kRayDirNE;
+        case kRayDirNW:
+        return kRayDirSE;
+        case kRayDirSE:
+        return kRayDirNW;
+    }
+    return dir;
 }

@@ -17,15 +17,29 @@ int main()
     initKnightPositionTable();
     init_zobrist_nums();
 
-    ChessBoard board;
-
-    cout << board.key() << endl;
-    board.printBoard();
-
     MoveGenerator mg;
 
+    // ChessBoard board;
+
+    // cout << board.key() << endl;
+    // board.printBoard();
+
+
+    // mg.setBoard(board);
+    // mg.printAttacked();
+
+    // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
+
+    ChessBoard board(false);
+    board.addPiece(ChessPos("a1"),ChessPiece(kPieceKing,kPlayerWhite));
+    board.addPiece(ChessPos("a8"),ChessPiece(kPieceRook,kPlayerBlack));
+    board.addPiece(ChessPos("a4"),ChessPiece(kPieceQueen,kPlayerWhite));
+
+    board.printBoard();
     mg.setBoard(board);
     mg.printAttacked();
+    cout << mg.inCheck(board) << endl;
+    for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
 
     // cout << ChessPos("a3").pos << endl;
     // cout << ChessPos("a3").str() << endl;

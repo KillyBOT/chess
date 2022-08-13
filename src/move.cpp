@@ -5,8 +5,10 @@
 
 ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
+    this->captured = ChessPiece();
     this->oldPos = oldPos;
     this->newPos = newPos;
+    this->moveData = kMoveNone;
 }
 ChessMove::ChessMove(const ChessMove &move) {
     this->piece = move.piece;
@@ -35,7 +37,7 @@ bool ChessMove::isValid() const {
 }
 std::string ChessMove::str() const {
     std::string str;
-    if(this->isCastling()){
+    if(this->moveData == kMoveIsCastling){
         if(this->isCastlingKingside()) return "0-0";
         else return "0-0-0";
     }
@@ -44,7 +46,7 @@ std::string ChessMove::str() const {
     if(this->captured.type() != kPieceNone) str += 'x';
     str += this->newPos.str();
 
-    if(this->isPromoting()){
+    if(this->promotionType()){
         str += '=';
         str += ChessPiece(this->promotionType(), this->piece.player()).pieceChar();
     }

@@ -70,7 +70,7 @@ ChessBoard::ChessBoard(bool initBoard){
         }
     }
 
-    this->addInitialKey();
+    this->resetKeys();
 }
 ChessBoard::ChessBoard(const ChessBoard &board) {
     memcpy(this->pieces_,board.pieces_, 64 * sizeof(ChessPiece));
@@ -139,7 +139,10 @@ void ChessBoard::addNewKey(ChessMove move) {
     this->boardHistory_.push_back(newKey);
     this->boardData_.push_back(newData);
 }
-void ChessBoard::addInitialKey() {
+void ChessBoard::resetKeys() {
+    
+    this->boardData_.clear();
+    this->boardHistory_.clear();
 
     this->boardData_.push_back(0b1111);
 

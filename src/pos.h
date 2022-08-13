@@ -10,7 +10,7 @@ struct ChessPos{
     char pos;
 
     ChessPos(char pos = -1);
-    ChessPos(char rank, char file);
+    ChessPos(char file, char rank);
     ChessPos(std::string str);
     ChessPos(const ChessPos &pos);
 

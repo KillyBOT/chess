@@ -31,6 +31,7 @@ const Byte kBoardDataBlackQueenside = 0b0111;
 class ChessBoard {
 
     ChessPiece pieces_[64];
+    char pieceMap_[64];
     ChessPos piecePositions_[64];
     int pieceNum_;
 
@@ -82,7 +83,7 @@ class ChessBoard {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
     inline char enPassantFile() const {
-        return this->boardData_.back() >> 4;
+        return (this->boardData_.back() >> 4) & 0b1111;
     }
 
     int turnNum() const;
@@ -94,7 +95,7 @@ class ChessBoard {
     //WARNING: if it's an invalid position, it will not work!
     void addPiece(ChessPos pos, ChessPiece piece);
     //WARNING: if it's an invalid position, it will not work!
-    void removePiece(ChessPos pos);
+    ChessPiece removePiece(ChessPos pos);
     //WARNING: if either of the positions are invalid, it will not work!
     void movePiece(ChessPos oldPos, ChessPos newPos);
     void resetKeys();

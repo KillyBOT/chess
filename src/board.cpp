@@ -38,6 +38,10 @@ ChessBoard::ChessBoard(bool initBoard){
     this->whiteKingPos_ = ChessPos();
     this->blackKingPos_ = ChessPos();
 
+    memset(this->pieces_, 0, 64);
+    memset(this->pieceMap_, 0, 64);
+    memset(this->piecePositions_, 0, 64);
+
     if(initBoard){
 
         string whitePawnStr, blackPawnStr;
@@ -89,7 +93,7 @@ void ChessBoard::addNewKey(ChessMove move) {
     Byte castlingInfo = this->boardData_.back() & 0b1111;
     unsigned short newData = 0;
 
-    newKey ^= kZobristEnPassantNums[((this->boardData_.back() >> 4) & 0b1111)];
+    newKey ^= kZobristEnPassantNums[(this->boardData_.back() >> 4) & 0b1111];
     newKey ^= kZobristCastlingNums[castlingInfo];
 
     //If castling, remove the rook from the old position and add it at the new position
@@ -118,7 +122,7 @@ void ChessBoard::addNewKey(ChessMove move) {
 
     //Generate the new data
     if(!move.isCapturing()) newData = this->movesSinceLastCapture() + 1;
-    newData <<= 8;
+    newData <<= 4;
     if(move.isEnPassantEligible()) newData |= (move.newPos.file() - 'a' + 1);
     newData <<= 4;
     if(move.isCastling()){
@@ -140,7 +144,7 @@ void ChessBoard::addNewKey(ChessMove move) {
     this->boardData_.push_back(newData);
 }
 void ChessBoard::resetKeys() {
-    
+
     this->boardData_.clear();
     this->boardHistory_.clear();
 
@@ -195,7 +199,7 @@ void ChessBoard::printBoard() const {
         else cout << this->turnNum()-1 << ": " << this->moves_[this->moves_.size()-2].str() << ' ' << this->moves_[this->moves_.size()-1].str() << endl;
     }
 
-    cout << endl;
+    //cout << endl;
 }
 void ChessBoard::printMoves() const {
     using std::cout;
@@ -221,32 +225,42 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
             else return;
         }
     }
+
     this->pieces_[pos.pos] = piece;
-    this->piecePositions_[this->pieceNum_] = pos.pos;
+
+    this->piecePositions_[this->pieceNum_] = pos;
+    this->pieceMap_[pos.pos] = this->pieceNum_;
     this->pieceNum_++;
 }
 //WARNING: if it's an invalid position, it will break!
-void ChessBoard::removePiece(ChessPos pos) {
-    if(this->piece(pos).type() == kPieceKing){
-        if(this->piece(pos).player() == kPlayerWhite) this->whiteKingPos_ = ChessPos();
-        else this->blackKingPos_ = ChessPos();
-    }
+ChessPiece ChessBoard::removePiece(ChessPos pos) {
+
+    ChessPiece removed = this->piece(pos);
+
+    if(this->whiteKingPos_ == pos) this->whiteKingPos_ = ChessPos();
+    else if(this->blackKingPos_ == pos) this->blackKingPos_ = ChessPos();
+
     this->pieces_[pos.pos] = ChessPiece();
 
-    int posInList = 0;
-    while(this->piecePositions_[posInList] != pos.pos) posInList++;
-    this->piecePositions_[posInList] = this->piecePositions_[this->pieceNum_];
+    char pieceInd = this->pieceMap_[pos.pos];
+    this->piecePositions_[pieceInd] = this->piecePositions_[this->pieceNum_-1];
+    this->pieceMap_[this->piecePositions_[pieceInd].pos] = pieceInd;
     this->pieceNum_--;
+
+    return removed;
 }
 //WARNING: if either of the positions are invalid, it will not work!
 void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
-    if(this->piece(oldPos).type() == kPieceKing){
-        if(this->piece(oldPos).player() == kPlayerWhite) this->whiteKingPos_ = newPos;
-        else this->blackKingPos_ = newPos;
-    }
+    if(oldPos == this->whiteKingPos_) this->whiteKingPos_ = newPos;
+    else if (oldPos == this->blackKingPos_) this->blackKingPos_ = newPos;
+
     this->pieces_[newPos.pos] = this->pieces_[oldPos.pos];
     this->pieces_[oldPos.pos] = ChessPiece();
-    this->pieces_[newPos.pos].data |= 0b10000; //Set it so that the piece has moved
+    if(!this->pieces_[newPos.pos].hasMoved()) this->pieces_[newPos.pos].data |= 0b10000;
+
+    char pieceInd = this->pieceMap_[oldPos.pos];
+    this->piecePositions_[pieceInd] = newPos;
+    this->pieceMap_[newPos.pos] = pieceInd;
 }
 
 void ChessBoard::doMove(ChessMove move, bool update) {
@@ -261,9 +275,13 @@ void ChessBoard::doMove(ChessMove move, bool update) {
         else removePos.pos += 8;
 
         this->removePiece(removePos);
-    }
+    } else if(move.isCapturing()) this->removePiece(move.newPos);
 
     this->movePiece(move.oldPos, move.newPos);
+    if(move.isPromoting()) {
+        this->pieces_[move.newPos.pos].data &= 0b11111000;
+        this->pieces_[move.newPos.pos].data |= move.promotionType();
+    }
 
     if(update){
         this->blackToMove_ = !this->blackToMove_;
@@ -279,8 +297,8 @@ void ChessBoard::undoMove(ChessMove move, bool update) {
         else this->undoMove(ChessMove(this->piece(ChessPos('c',move.oldPos.rank())),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
     }
 
-    this->movePiece(move.newPos, move.oldPos);
-    this->pieces_[move.oldPos.pos] = move.piece;
+    this->removePiece(move.newPos.pos);
+    this->addPiece(move.oldPos, move.piece);
 
     if(move.isEnPassant()){
         ChessPos removePos = move.newPos;

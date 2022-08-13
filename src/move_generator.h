@@ -2,24 +2,30 @@
 #define MOVE_GENERATOR_
 
 #include <vector>
+#include <unordered_map>
 
 #include "pos.h"
 #include "move.h"
 #include "board.h"
 
 using std::vector;
-using std::unordered_set;
+using std::unordered_map;
 
 class MoveGenerator {
 
     Player player_;
     Player opponent_;
     const ChessBoard *board_;
+    ChessPos kingPos_;
     bool doEnPassantCheck_;
+    bool hasForced_;
+    bool cannotMove_;
 
     bool attacked_[64];
     bool pinned_[64][9];
-    bool forced_[65];
+    bool forced_[64];
+
+    static unordered_map<std::size_t, vector<ChessMove>> knownBoards_;
 
     bool willMoveCapture(ChessMove &move) const;
     bool enPassantCheck(ChessMove &move) const;
@@ -46,11 +52,12 @@ class MoveGenerator {
     bool hasLost() const;
     bool hasLost(ChessBoard &board);
 
-    vector<ChessMove> getMoves();
-    vector<ChessMove> getMoves(ChessBoard &board);
+    const vector<ChessMove> &getMoves() const;
+    const vector<ChessMove> &getMoves(ChessBoard &board);
 
     void setBoard(ChessBoard &board);
-    void printAttacked();
+    void printAttacked() const;
+    void printForced() const;
 
 };
 

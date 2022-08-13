@@ -4,6 +4,9 @@
 
 #include "pos.h"
 
+ChessPos::ChessPos(){
+    this->pos = -1;
+}
 ChessPos::ChessPos(char pos){
     this->pos = pos;
 }

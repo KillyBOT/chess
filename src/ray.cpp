@@ -24,13 +24,10 @@ void initRayTable() {
         distArray[kRayDirSE] = std::min(distArray[kRayDirS],distArray[kRayDirE]);
         distArray[kRayDirNE] = std::min(distArray[kRayDirN],distArray[kRayDirE]);
 
-        //North
         for(int dir = 0; dir < 8; dir++){
             kRays[start][dir] = std::vector<ChessPos>();
             //std::cout << start << '\t' << dir << '\t' << distArray[dir] << std::endl;
-            for(int i = 1; i <= distArray[dir]; i++){
-                kRays[start][dir].push_back(ChessPos(start + i * kDeltaDir[dir]));
-            }
+            for(int i = 1; i <= distArray[dir]; i++) kRays[start][dir].push_back(ChessPos(start + i * kDeltaDir[dir]));
         }
     }
 }

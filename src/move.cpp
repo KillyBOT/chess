@@ -28,9 +28,8 @@ PieceType ChessMove::promotionType() const {
         return kPieceKnight;
         case kMovePromotingToBishop:
         return kPieceBishop;
-        default:
-        return kPieceNone;
     }
+    return kPieceNone;
 }
 bool ChessMove::isValid() const {
     return this->newPos.inBounds() && this->oldPos.pos != this->newPos.pos;

@@ -11,6 +11,7 @@ using namespace chess_defs;
 struct ChessPiece {
 
     Byte data;
+    bool hasMoved;
 
     ChessPiece(Byte data = 0);
     ChessPiece(PieceType type, Player player);
@@ -22,10 +23,7 @@ struct ChessPiece {
         return (this->data & 0b111);
     }
     inline Player player() const {
-        return (this->data >> 3) & 1;
-    }
-    inline bool hasMoved() const {
-        return (this->data >> 4) & 1;
+        return this->data >> 3;
     }
 
     char pieceChar(bool usePlayer = true) const;

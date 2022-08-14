@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <bitset>
 
+#include "piece_list.h"
 #include "chess_defs.h"
 #include "piece.h"
 #include "move.h"
@@ -18,7 +19,7 @@ using std::unordered_map;
 using std::unordered_set;
 using std::size_t;
 
-extern size_t kZobristPieceNums[64][12];
+extern size_t kZobristPieceNums[64][16];
 extern size_t kZobristBlackToMoveNum;
 extern size_t kZobristCastlingNums[16];
 extern size_t kZobristEnPassantNums[9];
@@ -31,14 +32,12 @@ const Byte kBoardDataBlackQueenside = 0b0111;
 class ChessBoard {
 
     ChessPiece pieces_[64];
-    char pieceMap_[64];
-    ChessPos piecePositions_[64];
+    ChessPieceList pieceLists_[16];
 
     vector<ChessMove> moves_;
     vector<unsigned short> boardData_;
     vector<size_t> boardHistory_;
     
-    int pieceNum_;
     bool blackToMove_;
     ChessPos whiteKingPos_, blackKingPos_;
 
@@ -49,9 +48,6 @@ class ChessBoard {
     ChessBoard(bool initBoard = true);
     ChessBoard(const ChessBoard &board);
 
-    inline int pieceNum() const {
-        return this->pieceNum_;
-    }
     inline Player player() const {
         return this->blackToMove_ ? kPlayerBlack : kPlayerWhite;
     }
@@ -67,8 +63,11 @@ class ChessBoard {
     inline const ChessPiece *pieces() const {
         return this->pieces_;
     }
-    inline const ChessPos *piecePositions() const {
-        return this->piecePositions_;
+    inline const ChessPieceList &pieceList(ChessPiece piece) const {
+        return this->pieceList(piece.data);
+    }
+    inline const ChessPieceList &pieceList(char ind) const {
+        return this->pieceLists_[ind];
     }
     inline const size_t &key() const {
         return this->boardHistory_.back();
@@ -91,6 +90,7 @@ class ChessBoard {
 
     void printBoard() const;
     void printMoves() const;
+    void printPieces() const;
 
     //WARNING: if it's an invalid position, it will not work!
     void addPiece(ChessPos pos, ChessPiece piece);

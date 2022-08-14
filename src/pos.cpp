@@ -29,16 +29,22 @@ ChessPos::ChessPos(const ChessPos &pos) {
 bool ChessPos::inBounds() const {
     return pos >= 0 && pos < 64;
 }
-char ChessPos::rank() const {
+char ChessPos::rankChar() const {
     return (char)((this->pos >> 3) + '1');
 }
-char ChessPos::file() const {
+char ChessPos::fileChar() const {
     return (char)((this->pos & 0b111) + 'a');
+}
+char ChessPos::rank() const {
+    return this->pos >> 3;
+}
+char ChessPos::file() const {
+    return this->pos & 0b111;
 }
 std::string ChessPos::str() const {
     std::string str;
-    str += this->file();
-    str += this->rank();
+    str += this->fileChar();
+    str += this->rankChar();
     return str;
 }
 

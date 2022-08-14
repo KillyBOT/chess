@@ -148,7 +148,7 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 }
 
 //Does everything the basic heuristic search does, but also uses attacked squares, number of pinned pieces, and a position evaluation in the calculation
-int heuristic_complex(ChessBoard &board, Player maxPlayer){
+/*int heuristic_complex(ChessBoard &board, Player maxPlayer){
     mg.setBoard(board);
     Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
     int score = 0;
@@ -227,7 +227,7 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
     score += (maxPlayer == kPlayerWhite ? positionScore : -positionScore) * kPositionCoefficient;
 
     return score;
-}
+}*/
 
 TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
     this->val = val;

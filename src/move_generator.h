@@ -17,9 +17,7 @@ class MoveGenerator {
     Player opponent_;
     const ChessBoard *board_;
     ChessPos kingPos_;
-    bool doEnPassantCheck_;
-    bool hasForced_;
-    bool cannotMove_;
+    bool doEnPassantCheck_, hasForced_, cannotMove_;
 
     bool attacked_[64];
     bool pinned_[64][9];
@@ -34,6 +32,16 @@ class MoveGenerator {
 
     void setAttackedForPiece(ChessPiece piece, ChessPos pos);
     void genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece, ChessPos start) const;
+    
+    void genPawnAttacks();
+    void genKnightAttacks();
+    void genKingAttacks();
+    void genSlidingAttacks();
+
+    void genKingMoves(vector<ChessMove> &moves) const;
+    void genPawnMoves(vector<ChessMove> &moves) const;
+    void genKnightMoves(vector<ChessMove> &moves) const;
+    void genSlidingMoves(vector<ChessMove> &moves) const;
 
     void setPinned();
     void setAttacked();
@@ -46,16 +54,16 @@ class MoveGenerator {
     bool fiftyMoveRuleStalemate() const;
     bool fiftyMoveRuleStalemate(ChessBoard &board) const;
 
-    bool stalemate() const;
+    bool stalemate();
     bool stalemate(ChessBoard &board);
 
     bool inCheck() const;
     bool inCheck(ChessBoard &board);
 
-    bool hasLost() const;
+    bool hasLost();
     bool hasLost(ChessBoard &board);
 
-    vector<ChessMove> getMoves() const;
+    vector<ChessMove> getMoves();
     vector<ChessMove> getMoves(ChessBoard &board);
     // const vector<ChessMove> &getMoves() const;
     // const vector<ChessMove> &getMoves(ChessBoard &board);

@@ -16,6 +16,8 @@ struct ChessPos{
     ChessPos(const ChessPos &pos);
 
     bool inBounds() const;
+    char rankChar() const;
+    char fileChar() const;
     char rank() const;
     char file() const;
     std::string str() const;

@@ -10,6 +10,7 @@
 #include "board.h"
 #include "move_generator.h"
 #include "mcts.h"
+#include "minimax.h"
 
 int main()
 {
@@ -41,6 +42,7 @@ int main()
     board.printBoard();
 
     MCTS mcts = MCTS(2000);
+    Minimax minimax = Minimax(heuristic_complex, 5);
 
     mg.setBoard(board);
     srand(time(NULL));
@@ -50,7 +52,8 @@ int main()
         //mg.printAttacked();
         //mg.printForced();
 
-        board.doMove(mcts.findOptimalMove(board));
+        //board.doMove(mcts.findOptimalMove(board));
+        board.doMove(minimax.findOptimalMove(board));
         board.printBoard();
 
         mg.setBoard(board);

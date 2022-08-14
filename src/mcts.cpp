@@ -96,9 +96,8 @@ Player MCTS::simulate(ChessBoard &leaf) {
     srand(time(NULL));
     while (true){
         //leaf.printBoard();
-        //mg.setBoard(leaf);
-        //mg.printAttacked();
         mg.setBoard(leaf);
+        //std::cout << leaf.pieceNum() << std::endl;
         if(mg.fiftyMoveRuleStalemate(leaf)) return 2;
         const vector<ChessMove> &moves = mg.getMoves();
         //for(const ChessMove &move : moves) std::cout << move.str() << std::endl;

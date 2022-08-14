@@ -25,16 +25,13 @@ int main()
     MoveGenerator mg;
 
     // ChessBoard board(false);
-    // board.addPiece(ChessPos("c2"),ChessPiece(kPieceKing,kPlayerWhite));
-    // board.addPiece(ChessPos("d4"),ChessPiece(kPieceKing,kPlayerBlack));
-    // board.addPiece(ChessPos("a3"),ChessPiece(kPieceKnight, kPlayerBlack));
+    // board.addPiece(ChessPos("a1"),ChessPiece(kPieceKing,  kPlayerWhite));
+    // board.addPiece(ChessPos("h8"),ChessPiece(kPieceKing,kPlayerBlack));
+    // board.addPiece(ChessPos("c2"),ChessPiece(kPiecePawn, kPlayerWhite));
+    // board.addPiece(ChessPos("d4"),ChessPiece(kPiecePawn, kPlayerBlack));
 
     // board.printBoard();
-    // mg.setBoard(board);
-    // mg.printAttacked();
-    // mg.printForced();
-    // cout << mg.inCheck(board) << endl;
-    // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
+    // board.doMove(mg.getMoves(board)[4]);
     // mg.setBoard(board);
     // board.printBoard();
     // mg.printAttacked();
@@ -43,7 +40,7 @@ int main()
     ChessBoard board;
     board.printBoard();
 
-    MCTS mcts = MCTS(1000);
+    MCTS mcts = MCTS(2000);
 
     mg.setBoard(board);
     srand(time(NULL));

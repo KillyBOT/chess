@@ -16,7 +16,7 @@ bool MoveGenerator::willMoveCapture(ChessMove &move) const {
     return false;
 }
 bool MoveGenerator::enPassantCheck(ChessMove &move) const {
-    if(this->doEnPassantCheck_ && move.newPos.file() - 'a' + 1 == this->board_->enPassantFile()){
+    if(this->doEnPassantCheck_ && (move.newPos.file() - 'a' + 1) == this->board_->enPassantFile()){
         ChessPos capturePos = move.newPos;
         if(move.piece.player() == kPlayerWhite) capturePos.pos -= 8;
         else capturePos.pos += 8;
@@ -25,30 +25,31 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
             this->board_->piece(capturePos).type() == kPiecePawn &&
             this->board_->piece(capturePos).player() == this->opponent_
         ){
-            move.captured = this->board_->piece(capturePos.pos);
-            move.moveData = kMoveEnPassant;
 
             //Check for annoying edge case where the en passant capture puts your king in check
             vector<ChessPos> pieces;
             this->addPiecesInDir(pieces, this->kingPos_, kRayDirE);
             if(
-                pieces.size() < 3 ||
-                pieces[0] != move.oldPos ||
-                pieces[1] != capturePos ||
-                this->board_->piece(pieces[2]).player() != this->opponent_ ||
-                this->board_->piece(pieces[2]).type() != kPieceRook ||
-                (this->board_->piece(pieces[2]).type() != kPieceRook && this->board_->piece(pieces[2]).type() != kPieceQueen)
+                pieces.size() > 2 &&
+                pieces[0] == move.oldPos &&
+                pieces[1] == capturePos &&
+                this->board_->piece(pieces[2]).player() == this->opponent_ &&
+                this->board_->piece(pieces[2]).type() == kPieceRook &&
+                (this->board_->piece(pieces[2]).type() == kPieceRook || this->board_->piece(pieces[2]).type() == kPieceQueen)
             ) return false;
 
             pieces.clear();
             this->addPiecesInDir(pieces, this->kingPos_, kRayDirW);
             if(
-                pieces.size() < 3 ||
-                pieces[0] != move.oldPos ||
-                pieces[1] != capturePos ||
-                this->board_->piece(pieces[2]).player() != this->opponent_ ||
-                (this->board_->piece(pieces[2]).type() != kPieceRook && this->board_->piece(pieces[2]).type() != kPieceQueen)
+                pieces.size() > 2 &&
+                pieces[0] != move.oldPos &&
+                pieces[1] != capturePos &&
+                this->board_->piece(pieces[2]).player() != this->opponent_ &&
+                (this->board_->piece(pieces[2]).type() == kPieceRook || this->board_->piece(pieces[2]).type() == kPieceQueen)
             ) return false;
+
+            move.captured = this->board_->piece(capturePos);
+            move.moveData = kMoveEnPassant;
 
             return true;
         }
@@ -165,9 +166,11 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                     } else {
                         moves.push_back(move);
                     }
+                    move.moveData = kMoveNone;
                     move.captured = ChessPiece();
                 }
                 
+            
             }  
             if(kRays[start.pos][kRayDirNW].size() && (!isPinned || this->pinned_[start.pos][kRayDirNW])){
                 move.newPos = kRays[start.pos][kRayDirNW][0];
@@ -182,10 +185,10 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                         moves.push_back(move);
                         move.moveData = kMovePromotingToQueen;
                         moves.push_back(move);
-                        move.moveData = kMoveNone;
                     } else {
                         moves.push_back(move);
                     }
+                    move.moveData = kMoveNone;
                     move.captured = ChessPiece();
                 }
             }      
@@ -213,6 +216,7 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                 //Then, check two squares forward
                 if(doNextCheck && !move.piece.hasMoved() && kRays[start.pos][kRayDirN].size() > 1){
                     move.newPos = kRays[start.pos][kRayDirN][1];
+                    move.moveData = kMoveEnPassantEligible;
                     if(!this->board_->hasPieceAtPos(move.newPos)) {
                         if(move.newPos.rank() == '8'){
                             move.moveData = kMovePromotingToBishop;
@@ -242,10 +246,10 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                         moves.push_back(move);
                         move.moveData = kMovePromotingToQueen;
                         moves.push_back(move);
-                        move.moveData = kMoveNone;
                     } else {
                         moves.push_back(move);
                     }
+                    move.moveData = kMoveNone;
                     move.captured = ChessPiece();
                 }
                 
@@ -263,10 +267,10 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
                         moves.push_back(move);
                         move.moveData = kMovePromotingToQueen;
                         moves.push_back(move);
-                        move.moveData = kMoveNone;
                     } else {
                         moves.push_back(move);
                     }
+                    move.moveData = kMoveNone;
                     move.captured = ChessPiece();
                 }
             }      
@@ -440,6 +444,13 @@ void MoveGenerator::genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece,
         
         break;
     }
+
+    // if(piece.type() == kPieceKing){
+    //     this->board_->printBoard();
+    //     this->printAttacked();
+    //     for(int i = oldSize; i < moves.size(); i++) std::cout << moves[i].str() << ", ";
+    //     std::cout << std::endl;
+    // }
 }
 
 void MoveGenerator::setPinned() {

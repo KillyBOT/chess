@@ -222,15 +222,10 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
    // std::cout << "Adding piece " << piece.pieceChar() << " at " << pos.str() << std::endl;
 
     if(piece.type() == kPieceKing){
-        if(piece.player() == kPlayerWhite) {
-            if(this->whiteKingPos_.pos == -1) this->whiteKingPos_ = pos;
-            else return;
-        }
-        else {
-            if(this->blackKingPos_.pos == -1) this->blackKingPos_ = pos;
-            else return;
-        }
-
+        // std::cout << "Adding king:" << std::endl;
+        // this->printBoard();
+        if(piece.player() == kPlayerWhite) this->whiteKingPos_ = pos;
+        else this->blackKingPos_ = pos;
         //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
     }
 
@@ -248,8 +243,13 @@ ChessPiece ChessBoard::removePiece(ChessPos pos) {
     ChessPiece removed = this->piece(pos);
 
     //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
+    // if(pos == this->whiteKingPos_ || pos == this->blackKingPos_) {
+    //     std::cout << "Removing king:" << std::endl;
+    //     this->printBoard();
+    // }
     if(this->whiteKingPos_ == pos) this->whiteKingPos_ = ChessPos();
     else if(this->blackKingPos_ == pos) this->blackKingPos_ = ChessPos();
+    
     //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
 
     this->pieces_[pos.pos] = ChessPiece();
@@ -280,12 +280,14 @@ void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
 }
 
 void ChessBoard::doMove(ChessMove move, bool update) {
+
     if(move.isCastling()){
         if(move.isCastlingKingside()) this->doMove(ChessMove(this->piece(ChessPos('h',move.oldPos.rank())),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
         else this->doMove(ChessMove(this->piece(ChessPos('a',move.oldPos.rank())),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
     }
 
     if(move.isEnPassant()){
+        //this->printBoard();
         ChessPos removePos = move.newPos;
         if(move.piece.player() == kPlayerWhite) removePos.pos -= 8;
         else removePos.pos += 8;
@@ -308,6 +310,8 @@ void ChessBoard::doMove(ChessMove move, bool update) {
         this->addNewKey(move);
     }
 
+    //if(move.isEnPassant()) this->printBoard();
+
 
 }
 void ChessBoard::undoMove(ChessMove move, bool update) {
@@ -316,8 +320,8 @@ void ChessBoard::undoMove(ChessMove move, bool update) {
         else this->undoMove(ChessMove(ChessPiece(kPieceRook, move.piece.player()),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);
     }
 
-    this->removePiece(move.newPos);
-    this->addPiece(move.oldPos, move.piece);
+    this->movePiece(move.newPos, move.oldPos);
+    this->pieces_[move.oldPos.pos] = move.piece;
 
     if(move.isEnPassant()){
         ChessPos removePos = move.newPos;

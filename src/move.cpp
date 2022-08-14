@@ -60,5 +60,5 @@ std::string ChessMove::str() const {
     return str;
 }
 bool ChessMove::isCastlingKingside() const {
-    return this->newPos.file() == 'b';
+    return this->newPos.file() == 'g';
 }

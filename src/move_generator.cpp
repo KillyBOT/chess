@@ -20,7 +20,7 @@ bool MoveGenerator::willMoveCapture(ChessMove &move) const {
     return false;
 }
 bool MoveGenerator::enPassantCheck(ChessMove &move) const {
-    if(this->doEnPassantCheck_ && move.newPos.file() + 1 == this->board_->enPassantFile()){
+    if(this->doEnPassantCheck_ && move.newPos.file() == this->board_->enPassantFile()){
         ChessPos capturePos = move.newPos;
         if(move.piece.player() == kPlayerWhite) capturePos.pos -= 8;
         else capturePos.pos += 8;
@@ -38,7 +38,6 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
                 pieces[0] == move.oldPos &&
                 pieces[1] == capturePos &&
                 this->board_->piece(pieces[2]).player() == this->opponent_ &&
-                this->board_->piece(pieces[2]).type() == kPieceRook &&
                 (this->board_->piece(pieces[2]).type() == kPieceRook || this->board_->piece(pieces[2]).type() == kPieceQueen)
             ) return false;
 
@@ -46,9 +45,9 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
             this->addPiecesInDir(pieces, this->kingPos_, kRayDirW);
             if(
                 pieces.size() > 2 &&
-                pieces[0] != move.oldPos &&
-                pieces[1] != capturePos &&
-                this->board_->piece(pieces[2]).player() != this->opponent_ &&
+                pieces[0] == move.oldPos &&
+                pieces[1] == capturePos &&
+                this->board_->piece(pieces[2]).player() == this->opponent_ &&
                 (this->board_->piece(pieces[2]).type() == kPieceRook || this->board_->piece(pieces[2]).type() == kPieceQueen)
             ) return false;
 
@@ -285,7 +284,7 @@ void MoveGenerator::genKnightMoves(vector<ChessMove> &moves) const {
 
         for(ChessPos &newPos : kKnightPositionTable[start.pos]){
             ChessMove move(this->board_->piece(start), start, newPos);
-            if(!this->board_->hasPieceAtPos(newPos) || this->willMoveCapture(move)) moves.push_back(move);
+            if(!this->board_->hasPieceAtPos(newPos) || this->willMoveCapture(move)) this->addMove(moves,move);
         }
     }
 }
@@ -319,15 +318,15 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
             if(this->willMoveCapture(move) || this->enPassantCheck(move)){
                 if(move.newPos.rank() == promoteRank){
                     move.moveData = kMovePromotingToBishop;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToRook;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToKnight;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToQueen;
                 }
 
-                moves.push_back(move);
+                this->addMove(moves,move);
                 move.moveData = kMoveNone;
             }
         }
@@ -336,15 +335,15 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
             if(this->willMoveCapture(move) || this->enPassantCheck(move)){
                 if(move.newPos.rank() == promoteRank){
                     move.moveData = kMovePromotingToBishop;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToRook;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToKnight;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToQueen;
                 }
 
-                moves.push_back(move);
+                this->addMove(moves,move);
                 move.moveData = kMoveNone;
             }
         }
@@ -358,33 +357,34 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
                 doTwoMoveCheck = true;
                 if(move.newPos.rank() == promoteRank){
                     move.moveData = kMovePromotingToBishop;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToRook;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToKnight;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToQueen;
                 }
-                moves.push_back(move);
+                this->addMove(moves,move);
+                move.moveData = false;
             }
         }
 
-        if(doTwoMoveCheck && kRays[start.pos][dirF].size() > 1){
+        if(doTwoMoveCheck && kRays[start.pos][dirF].size() > 1 && !move.piece.hasMoved){
             move.newPos = kRays[start.pos][dirF][1];
             if(!this->board_->hasPieceAtPos(move.newPos)){
                 if(move.newPos.rank() == promoteRank){
                     move.moveData = kMovePromotingToBishop;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToRook;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToKnight;
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                     move.moveData = kMovePromotingToQueen;
                 } else {
                     move.moveData = kMoveEnPassantEligible;
                 }
 
-                moves.push_back(move);
+                this->addMove(moves,move);
             }
         }
     }
@@ -410,13 +410,13 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
                 //std::cout << start.str() << std::endl;
                 for(posInDir = 0; posInDir < kRays[start.pos][dir].size() && !this->board_->hasPieceAtPos(kRays[start.pos][dir][posInDir]); posInDir++) {
                     move.newPos = kRays[start.pos][dir][posInDir];
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                 }
                 
                 if(posInDir < kRays[start.pos][dir].size()) {
                     move.newPos = kRays[start.pos][dir][posInDir];
                     if(this->willMoveCapture(move)) {
-                        moves.push_back(move);
+                        this->addMove(moves,move);
                         move.captured = ChessPiece();
                     }
                 }
@@ -434,13 +434,13 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
             if(!isPinned || this->pinned_[start.pos][dir]){
                 for(posInDir = 0; posInDir < kRays[start.pos][dir].size() && !this->board_->hasPieceAtPos(kRays[start.pos][dir][posInDir]); posInDir++) {
                     move.newPos = kRays[start.pos][dir][posInDir];
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                 }
                 
                 if(posInDir < kRays[start.pos][dir].size()) {
                     move.newPos = kRays[start.pos][dir][posInDir];
                     if(this->willMoveCapture(move)) {
-                        moves.push_back(move);
+                        this->addMove(moves,move);
                         move.captured = ChessPiece();
                     }
                 }
@@ -459,13 +459,13 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
             if(!isPinned || this->pinned_[start.pos][dir]){
                 for(posInDir = 0; posInDir < kRays[start.pos][dir].size() && !this->board_->hasPieceAtPos(kRays[start.pos][dir][posInDir]); posInDir++) {
                     move.newPos = kRays[start.pos][dir][posInDir];
-                    moves.push_back(move);
+                    this->addMove(moves,move);
                 }
                 
                 if(posInDir < kRays[start.pos][dir].size()) {
                     move.newPos = kRays[start.pos][dir][posInDir];
                     if(this->willMoveCapture(move)) {
-                        moves.push_back(move);
+                        this->addMove(moves,move);
                         move.captured = ChessPiece();
                     }
                 }
@@ -792,6 +792,7 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
     // }
 }
 */
+
 void MoveGenerator::setPinned() {
 
     memset(this->pinned_, false, 576);
@@ -841,7 +842,6 @@ void MoveGenerator::setAttacked() {
     this->genKnightAttacks();
     this->genSlidingAttacks();
 }
-
 void MoveGenerator::setForced() {
 
     memset(this->forced_, false, 64);
@@ -989,7 +989,7 @@ bool MoveGenerator::inCheck(ChessBoard &board) {
     return this->hasForced_;
 }
 
-bool MoveGenerator::hasLost() {
+bool MoveGenerator::hasLost() const {
     return (this->inCheck() && this->getMoves().empty());
 }
 bool MoveGenerator::hasLost(ChessBoard &board) {
@@ -997,7 +997,7 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
     return this->hasLost();
 }
 
-vector<ChessMove> MoveGenerator::getMoves() {
+vector<ChessMove> MoveGenerator::getMoves() const {
     //std::cout << "Generating moves for board:" << std::endl;
     //std::cout << this->board_->pieceNum() << std::endl;
     //this->board_->printBoard();
@@ -1026,6 +1026,7 @@ vector<ChessMove> MoveGenerator::getMoves() {
     // // std::cout << std::endl;
 
     //If in check, generate the attack table
+
     this->genKingMoves(moves);
 
     if(this->cannotMove_) return moves;
@@ -1089,13 +1090,11 @@ const vector<ChessMove> &MoveGenerator::getMoves(ChessBoard &board) {
 
 void MoveGenerator::setBoard(ChessBoard &board) {
 
-    memset(this->attacked_, false, 64);
-
     this->board_ = &board;
     this->player_ = board.player();
     this->opponent_ = board.opponent();
-    this->doEnPassantCheck_ = board.enPassantFile();
     this->kingPos_ = board.kingPos(this->player_);
+    this->doEnPassantCheck_ = board.enPassantFile() >= 0;
 
     //std::cout << this->kingPos_.str() << std::endl;
 

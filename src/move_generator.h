@@ -17,7 +17,8 @@ class MoveGenerator {
     Player opponent_;
     const ChessBoard *board_;
     ChessPos kingPos_;
-    bool doEnPassantCheck_, hasForced_, cannotMove_;
+    bool hasForced_, cannotMove_;
+    bool doEnPassantCheck_;
 
     bool attacked_[64];
     bool pinned_[64][9];
@@ -38,6 +39,9 @@ class MoveGenerator {
     void genKingAttacks();
     void genSlidingAttacks();
 
+    inline void addMove(vector<ChessMove> &moves, ChessMove &move) const {
+        if(!this->hasForced_ || this->forced_[move.newPos.pos])moves.push_back(move);
+    }
     void genKingMoves(vector<ChessMove> &moves) const;
     void genPawnMoves(vector<ChessMove> &moves) const;
     void genKnightMoves(vector<ChessMove> &moves) const;
@@ -46,6 +50,7 @@ class MoveGenerator {
     void setPinned();
     void setAttacked();
     void setForced();
+    void setPinnedAndForced();
 
     public:
 
@@ -60,10 +65,10 @@ class MoveGenerator {
     bool inCheck() const;
     bool inCheck(ChessBoard &board);
 
-    bool hasLost();
+    bool hasLost() const;
     bool hasLost(ChessBoard &board);
 
-    vector<ChessMove> getMoves();
+    vector<ChessMove> getMoves() const;
     vector<ChessMove> getMoves(ChessBoard &board);
     // const vector<ChessMove> &getMoves() const;
     // const vector<ChessMove> &getMoves(ChessBoard &board);

@@ -2,18 +2,21 @@
 
 ChessPiece::ChessPiece(Byte data){
     this->data = data;
+    this->hasMoved = false;
 }
 ChessPiece::ChessPiece(PieceType type, Player player) {
+    this->hasMoved = false;
     this->data = player;
     this->data <<= 3;
     this->data |= type;
 }
 ChessPiece::ChessPiece(const ChessPiece &piece) {
     this->data = piece.data;
+    this->hasMoved = piece.hasMoved;
 }
 
 bool ChessPiece::operator==(const ChessPiece &piece) const {
-    return this->data == piece.data;
+    return this->data == piece.data && this->hasMoved == piece.hasMoved;
 }
 
 char ChessPiece::pieceChar(bool usePlayer) const {

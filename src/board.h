@@ -82,7 +82,7 @@ class ChessBoard {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
     inline char enPassantFile() const {
-        return (this->boardData_.back() >> 4) & 0b1111;
+        return ((this->boardData_.back() >> 4) & 0b1111) - 1;
     }
 
     int turnNum() const;

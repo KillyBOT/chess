@@ -41,7 +41,7 @@ ChessBoard::ChessBoard(bool initBoard){
     this->whiteKingPos_ = ChessPos();
     this->blackKingPos_ = ChessPos();
 
-    memset(this->pieces_, 0, 64);
+    memset(this->pieces_, 0, 64 * sizeof(ChessPiece) );
     for(int i = 0; i < 16; i++) this->pieceLists_[i] = ChessPieceList();
 
     if(initBoard){
@@ -116,7 +116,7 @@ void ChessBoard::addNewKey(ChessMove move) {
         if(move.piece.player() == kPlayerWhite) capturePos.pos -= 8;
         else capturePos.pos += 8;
 
-        newKey ^= kZobristPieceNums[capturePos.pos][6*move.captured.player()];
+        newKey ^= kZobristPieceNums[capturePos.pos][move.captured.data];
     } else if (move.isCapturing()) newKey ^= kZobristPieceNums[move.newPos.pos][move.captured.data];
 
     //Remove the piece at oldPos and add the piece at newPos
@@ -126,7 +126,7 @@ void ChessBoard::addNewKey(ChessMove move) {
     //Generate the new data
     if(!move.isCapturing()) newData = this->movesSinceLastCapture() + 1;
     newData <<= 4;
-    if(move.isEnPassantEligible()) newData |= (move.newPos.file() - 'a' + 1);
+    if(move.moveData == kMoveEnPassantEligible) newData |= (move.newPos.file() + 1);
     newData <<= 4;
     if(move.isCastling()){
         if(move.isCastlingKingside()){
@@ -323,7 +323,6 @@ void ChessBoard::doMove(ChessMove move, bool update) {
         this->pieces_[move.newPos.pos].data &= 0b11111000;
         this->pieces_[move.newPos.pos].data |= move.promotionType();
     }
-    
     this->pieces_[move.newPos.pos].hasMoved = true;
 
     if(update){
@@ -337,6 +336,7 @@ void ChessBoard::doMove(ChessMove move, bool update) {
 
 }
 void ChessBoard::undoMove(ChessMove move, bool update) {
+
     if(move.isCastling()){
         if(move.isCastlingKingside()) this->undoMove(ChessMove(ChessPiece(kPieceRook, move.piece.player()),ChessPos('h',move.oldPos.rank()),ChessPos('f',move.oldPos.rank())), false);
         else this->undoMove(ChessMove(ChessPiece(kPieceRook, move.piece.player()),ChessPos('a',move.oldPos.rank()),ChessPos('c',move.oldPos.rank())), false);

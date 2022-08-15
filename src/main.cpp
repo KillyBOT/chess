@@ -16,20 +16,17 @@
 
 int move_generation_test(ChessBoard &board, int depth){
 
-    static MoveGenerator mg;
-
-    if(depth <= 0) {
-        board.printBoard();
-        board.printMoves();
-    }
+    MoveGenerator mg;
 
     if(depth <= 0) return 1;
-
     int positionNum = 0;
+    int toAdd;
 
     for(ChessMove move : mg.getMoves(board)){
         board.doMove(move);
-        positionNum += move_generation_test(board, depth-1);
+        toAdd = move_generation_test(board, depth-1);
+        //if(depth == 5) std::cout << move.str() << '\t' << toAdd << std::endl;
+        positionNum += toAdd;
         board.undoLastMove();
     }
 
@@ -69,7 +66,7 @@ int main()
     ChessBoard board;
     board.printBoard();
 
-    for(int i = 1; i < 4; i++){
+    for(int i = 1; i < 6; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         int positionNum = move_generation_test(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

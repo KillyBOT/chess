@@ -30,9 +30,6 @@ class MoveGenerator {
     bool enPassantCheck(ChessMove &move) const;
 
     void addPiecesInDir(vector<ChessPos> &positions, ChessPos start, int dir) const;
-
-    void setAttackedForPiece(ChessPiece piece, ChessPos pos);
-    void genMovesForPiece(vector<ChessMove> &moves, ChessPiece piece, ChessPos start) const;
     
     void genPawnAttacks();
     void genKnightAttacks();
@@ -47,9 +44,7 @@ class MoveGenerator {
     void genKnightMoves(vector<ChessMove> &moves) const;
     void genSlidingMoves(vector<ChessMove> &moves) const;
 
-    void setPinned();
     void setAttacked();
-    void setForced();
     void setPinnedAndForced();
 
     public:

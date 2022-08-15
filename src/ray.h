@@ -17,6 +17,7 @@ const char kRayDirNE = 7;
 
 extern std::vector<ChessPos> kRays[64][8];
 extern std::vector<ChessPos> kKnightPositionTable[64];
+extern int kRaysSize[64][8];
 
 void initRayTable();
 void initKnightPositionTable();

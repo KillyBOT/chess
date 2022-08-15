@@ -7,6 +7,7 @@
 
 std::vector<ChessPos> kRays[64][8];
 std::vector<ChessPos> kKnightPositionTable[64];
+int kRaysSize[64][8];
 
 //N W S E NW SW SE NE
 static const int kDeltaDir[8] = {8, -1, -8, 1, 7, -9, -7, 9};
@@ -28,6 +29,7 @@ void initRayTable() {
             kRays[start][dir] = std::vector<ChessPos>();
             //std::cout << start << '\t' << dir << '\t' << distArray[dir] << std::endl;
             for(int i = 1; i <= distArray[dir]; i++) kRays[start][dir].push_back(ChessPos(start + i * kDeltaDir[dir]));
+            kRaysSize[start][dir] = distArray[dir];
         }
     }
 }

@@ -73,7 +73,7 @@ int main()
     //board.fromFen("rnQq1k1r/pp2bppp/8/2p5/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1");
     board.printBoard();
 
-    for(int i = 1; i < 6; i++){
+    for(int i = 1; i < 5; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         int positionNum = move_generation_test(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

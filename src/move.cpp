@@ -59,6 +59,16 @@ std::string ChessMove::str() const {
 
     return str;
 }
+std::string ChessMove::strUCI() const {
+    std::string str;
+    str += this->oldPos.str();
+    str += this->newPos.str();
+    if(this->isPromoting()){
+        str += ChessPiece(this->promotionType(), kPlayerBlack).pieceChar();
+    }
+
+    return str;
+}
 bool ChessMove::isCastlingKingside() const {
-    return this->newPos.file() == 'g';
+    return this->newPos.fileChar() == 'g';
 }

@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <bitset>
 
 #include "piece_list.h"
 #include "chess_defs.h"
@@ -35,7 +34,7 @@ class ChessBoard {
     ChessPieceList pieceLists_[16];
 
     vector<ChessMove> moves_;
-    vector<unsigned short> boardData_;
+    vector<unsigned int> boardData_;
     vector<size_t> boardHistory_;
     
     bool blackToMove_;
@@ -46,6 +45,7 @@ class ChessBoard {
     public:
 
     ChessBoard(bool initBoard = true);
+    ChessBoard(std::string fenStr);
     ChessBoard(const ChessBoard &board);
 
     inline Player player() const {
@@ -76,17 +76,18 @@ class ChessBoard {
         return this->moves_.back();
     }
     inline const Byte movesSinceLastCapture() const {
-        return this->boardData_.back() >> 8;
+        return this->boardData_.back() >> 11;
     }
     inline ChessPos kingPos(Player player) const {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
-    inline char enPassantFile() const {
-        return ((this->boardData_.back() >> 4) & 0b1111) - 1;
+    inline ChessPos enPassantSquare() const {
+        return ChessPos(((this->boardData_.back() >> 4) & 0b1111111));
     }
 
     int turnNum() const;
     int playerScore(Player player) const;
+    std::string fen() const;
 
     void printBoard() const;
     void printMoves() const;
@@ -98,7 +99,8 @@ class ChessBoard {
     ChessPiece removePiece(ChessPos pos);
     //WARNING: if either of the positions are invalid, it will not work!
     void movePiece(ChessPos oldPos, ChessPos newPos);
-    void resetKeys();
+    void resetKeys(unsigned int data);
+    void fromFen(std::string fen);
 
     void doMove(ChessMove move, bool update = true);
     void undoMove(ChessMove move, bool update = true);

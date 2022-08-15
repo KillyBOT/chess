@@ -1,10 +1,13 @@
 #include <iostream>
+#include <cstring>
 
 #include "pos.h"
 #include "piece_list.h"
 
 ChessPieceList::ChessPieceList() {
     this->pieceNum_ = 0;
+    memset(this->positions_, 0, 64 * sizeof(ChessPos));
+    memset(this->map_, 0, 64);
 }
 
 void ChessPieceList::addPiece(ChessPos pos){

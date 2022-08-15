@@ -32,23 +32,15 @@ struct ChessMove {
     inline bool isCapturing() const {
         return this->captured.type() != kPieceNone;
     }
-    inline bool isCastling() const {
-        return this->moveData == kMoveIsCastling;
-    }
     inline bool isPromoting() const {
         return this->moveData == kMovePromotingToQueen || this->moveData == kMovePromotingToRook || this->moveData == kMovePromotingToKnight || this->moveData == kMovePromotingToBishop;
-    }
-    inline bool isEnPassant() const {
-        return this->moveData == kMoveEnPassant;
-    }
-    inline bool isEnPassantEligible() const {
-        return this->moveData == kMoveEnPassantEligible;
     }
 
     PieceType promotionType() const;
     bool isValid() const;
     bool isCastlingKingside() const;
     std::string str() const;
+    std::string strUCI() const;
 
 };
 

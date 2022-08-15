@@ -16,16 +16,21 @@
 
 int move_generation_test(ChessBoard &board, int depth){
 
+    //board.printBoard();
+    //board.printPieces();
+
     MoveGenerator mg;
+    mg.setBoard(board);
+    //mg.printAttacked();
 
     if(depth <= 0) return 1;
     int positionNum = 0;
     int toAdd;
 
-    for(ChessMove move : mg.getMoves(board)){
+    for(ChessMove move : mg.getMoves()){
         board.doMove(move);
         toAdd = move_generation_test(board, depth-1);
-        //if(depth == 5) std::cout << move.str() << '\t' << toAdd << std::endl;
+        //if(depth == 5) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
         board.undoLastMove();
     }
@@ -64,6 +69,8 @@ int main()
     // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
 
     ChessBoard board;
+    //board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    //board.fromFen("rnQq1k1r/pp2bppp/8/2p5/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1");
     board.printBoard();
 
     for(int i = 1; i < 6; i++){

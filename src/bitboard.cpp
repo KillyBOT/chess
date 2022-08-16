@@ -66,13 +66,14 @@ void init_masks() {
         for(int i = 0; i < kRaySizes[start][kRayDirNW]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirNW][i]);
         for(int i = 0; i < kRaySizes[start][kRayDirSE]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirSE][i]);
 
-        for(int dir = 0; dir < 8; dir++){
-            if(kRaySizes[start][dir]) set_bit(kKingAttackMasks[start],kRays[start][dir][0]);
-        }
+        for(int dir = 0; dir < 8; dir++) if(kRaySizes[start][dir]) set_bit(kKingAttackMasks[start],kRays[start][dir][0]);
+
         if(kRaySizes[start][kRayDirNW]) set_bit(kWhitePawnAttackMasks[start],kRays[start][kRayDirNW][0]);
         if(kRaySizes[start][kRayDirSW]) set_bit(kBlackPawnAttackMasks[start],kRays[start][kRayDirSW][0]);
         if(kRaySizes[start][kRayDirSE]) set_bit(kBlackPawnAttackMasks[start],kRays[start][kRayDirSE][0]);
         if(kRaySizes[start][kRayDirNE]) set_bit(kWhitePawnAttackMasks[start],kRays[start][kRayDirNE][0]);
+
+        for(int i = 0; i < kKnightPositionTableSize[start]; i++) set_bit(kKnightAttackMasks[start],kKnightPositionTable[start][i]);
     }
     
 }

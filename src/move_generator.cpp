@@ -126,9 +126,7 @@ void MoveGenerator::genRankAttacks(ChessPos start){
     forward  = this->occupied_ & kRankMasks[pos_rank(start)];
     reverse  = flip_horizontal(forward);
     forward -= kPosMasks[start] << 1;
-    reverse -= flip_horizontal(kPosMasks[start] >> 1);
-    //reverse ^= flip_horizontal(this->board_->occupied());
-    //forward ^= this->board_->occupied();
+    reverse -= flip_horizontal(kPosMasks[start]) << 1;
     forward ^= flip_horizontal(reverse);
     forward &= kRankMasks[pos_rank(start)];
 
@@ -137,40 +135,43 @@ void MoveGenerator::genRankAttacks(ChessPos start){
     //print_bitboard(this->attacked_);
 }
 void MoveGenerator::genPawnAttacks() {
-    char dirL, dirR;
+    // char dirL, dirR;
 
     const ChessPieceList &list = this->board_->pieceList(kPieceListInd[this->opponent_][kPiecePawn]);
 
-    if(this->opponent_ == kPlayerWhite){
-        dirL = kRayDirNW;
-        dirR = kRayDirNE;
-    } else {
-        dirL = kRayDirSW;
-        dirR = kRayDirSE;
-    }
+    // if(this->opponent_ == kPlayerWhite){
+    //     dirL = kRayDirNW;
+    //     dirR = kRayDirNE;
+    // } else {
+    //     dirL = kRayDirSW;
+    //     dirR = kRayDirSE;
+    // }
 
     for(int i = 0; i < list.size(); i++){
-        const ChessPos &start = list[i];
+        //const ChessPos &start = list[i];
+        this->attacked_ |= (this->opponent_ == kPlayerWhite ? kWhitePawnAttackMasks[list[i]] : kBlackPawnAttackMasks[list[i]]);
 
-        if(kRaySizes[start][dirL]) set_bit(this->attacked_,kRays[start][dirL][0]);
-        if(kRaySizes[start][dirR]) set_bit(this->attacked_,kRays[start][dirR][0]);
+        //if(kRaySizes[start][dirL]) set_bit(this->attacked_,kRays[start][dirL][0]);
+        //if(kRaySizes[start][dirR]) set_bit(this->attacked_,kRays[start][dirR][0]);
     }
 }
 void MoveGenerator::genKnightAttacks() {
     const ChessPieceList &list = this->board_->pieceList(kPieceListInd[this->opponent_][kPieceKnight]);
 
     for(int i = 0; i < list.size(); i++){
-        const ChessPos &start = list[i];
-        for(int j = 0; j < kKnightPositionTableSize[start]; j++) set_bit(this->attacked_,kKnightPositionTable[start][j]);
+        // const ChessPos &start = list[i];
+        this->attacked_ |= kKnightAttackMasks[list[i]];
+        // for(int j = 0; j < kKnightPositionTableSize[start]; j++) set_bit(this->attacked_,kKnightPositionTable[start][j]);
     }
 }
 void MoveGenerator::genKingAttacks() {
 
-    ChessPos start = this->board_->kingPos(this->opponent_);
+    this->attacked_ |= kKingAttackMasks[this->board_->kingPos(this->opponent_)];
+    // ChessPos start = this->board_->kingPos(this->opponent_);
 
-    for(int dir = 0; dir < 8; dir++){
-        if(kRaySizes[start][dir]) set_bit(this->attacked_,kRays[start][dir][0]);
-    }
+    // for(int dir = 0; dir < 8; dir++){
+    //     if(kRaySizes[start][dir]) set_bit(this->attacked_,kRays[start][dir][0]);
+    // }
 }
 void MoveGenerator::genSlidingAttacks() {
     const ChessPieceList &rookList = this->board_->pieceList(kPieceListInd[this->opponent_][kPieceRook]);
@@ -503,6 +504,7 @@ void MoveGenerator::setAttacked() {
     this->genKnightAttacks();
     this->genSlidingAttacks();
 }
+//TODO: use bitboards to make this faster
 void MoveGenerator::setPinnedAndForced() {
     memset(this->pinnedDirs_,false, 512);
     this->pinned_ = 0;
@@ -752,7 +754,6 @@ void MoveGenerator::setBoard(ChessBoard &board) {
     //this->setPinned();
     //this->setForced();
 }
-
 
 void MoveGenerator::printAttacked() const {
 

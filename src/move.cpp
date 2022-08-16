@@ -4,15 +4,15 @@
 #include "move.h"
 
 ChessMove::ChessMove(){
-    this->piece = ChessPiece();
-    this->captured = ChessPiece();
-    this->oldPos = ChessPos();
-    this->newPos = ChessPos();
+    this->piece = 0;
+    this->captured = 0;
+    this->oldPos = -1;
+    this->newPos = -1;
     this->moveData = kMoveNone;
 }
 ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
-    this->captured = ChessPiece();
+    this->captured = 0;
     this->oldPos = oldPos;
     this->newPos = newPos;
     this->moveData = kMoveNone;
@@ -39,7 +39,7 @@ PieceType ChessMove::promotionType() const {
     return kPieceNone;
 }
 bool ChessMove::isValid() const {
-    return this->newPos.inBounds() && this->oldPos.pos != this->newPos.pos;
+    return pos_in_bounds(newPos) && this->oldPos != this->newPos;
 }
 std::string ChessMove::str() const {
     std::string str;
@@ -48,27 +48,27 @@ std::string ChessMove::str() const {
         else return "0-0-0";
     }
 
-    if(this->piece.type() != kPiecePawn) str += this->piece.pieceChar();
-    if(this->captured.type() != kPieceNone) str += 'x';
-    str += this->newPos.str();
+    if(piece_type(this->piece) != kPiecePawn) str += piece_char(this->piece);
+    if(piece_type(this->captured) != kPieceNone) str += 'x';
+    str += pos_str(this->newPos);
 
     if(this->promotionType()){
         str += '=';
-        str += ChessPiece(this->promotionType(), this->piece.player()).pieceChar();
+        str += piece_char(new_piece(this->promotionType(), piece_player(this->piece)));
     }
 
     return str;
 }
 std::string ChessMove::strUCI() const {
     std::string str;
-    str += this->oldPos.str();
-    str += this->newPos.str();
+    str += pos_str(this->oldPos);
+    str += pos_str(this->newPos);
     if(this->isPromoting()){
-        str += ChessPiece(this->promotionType(), kPlayerBlack).pieceChar();
+        str += piece_char(new_piece(this->promotionType(), kPlayerBlack));
     }
 
     return str;
 }
 bool ChessMove::isCastlingKingside() const {
-    return this->newPos.fileChar() == 'g';
+    return pos_file_char(this->newPos) == 'g';
 }

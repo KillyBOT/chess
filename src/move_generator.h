@@ -7,6 +7,7 @@
 #include "pos.h"
 #include "move.h"
 #include "board.h"
+#include "bitboard.h"
 
 using std::vector;
 using std::unordered_map;
@@ -20,9 +21,11 @@ class MoveGenerator {
     bool hasForced_, cannotMove_;
     bool doEnPassantCheck_;
 
-    bool attacked_[64];
-    bool pinned_[64][9];
-    bool forced_[64];
+    BitBoard occupied_;
+    BitBoard attacked_;
+    BitBoard pinned_;
+    bool pinnedDirs_[64][8];
+    BitBoard forced_;
 
     //static unordered_map<std::size_t, vector<ChessMove>> knownBoards_;
 
@@ -31,13 +34,18 @@ class MoveGenerator {
 
     void addPiecesInDir(vector<ChessPos> &positions, ChessPos start, int dir) const;
     
+    void genDiagAttacks(ChessPos start);
+    void genAntiDiagAttacks(ChessPos start);
+    void genRankAttacks(ChessPos start);
+    void genFileAttacks(ChessPos start);
+
     void genPawnAttacks();
     void genKnightAttacks();
     void genKingAttacks();
     void genSlidingAttacks();
 
     inline void addMove(vector<ChessMove> &moves, ChessMove &move) const {
-        if(!this->hasForced_ || this->forced_[move.newPos.pos]) moves.push_back(move);
+        if(!this->hasForced_ || bit(this->forced_, move.newPos)) moves.push_back(move);
     }
     void genKingMoves(vector<ChessMove> &moves) const;
     void genPawnMoves(vector<ChessMove> &moves) const;
@@ -73,5 +81,7 @@ class MoveGenerator {
     void printForced() const;
 
 };
+
+extern MoveGenerator gMoveGenerator;
 
 #endif

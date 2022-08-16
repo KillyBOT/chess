@@ -9,6 +9,7 @@
 #include "chess_defs.h"
 #include "piece.h"
 #include "move.h"
+#include "bitboard.h"
 
 using std::pair;
 using std::vector;
@@ -32,6 +33,7 @@ class ChessBoard {
 
     ChessPiece pieces_[64];
     ChessPieceList pieceLists_[16];
+    BitBoard occupied_;
 
     vector<ChessMove> moves_;
     vector<unsigned int> boardData_;
@@ -54,20 +56,14 @@ class ChessBoard {
     inline Player opponent() const {
         return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
     }
-    inline bool hasPieceAtPos(ChessPos pos) const {
-        return this->pieces_[pos.pos].data;
+    inline BitBoard occupied() const {
+        return this->occupied_;
     }
-    inline const ChessPiece &piece(ChessPos pos) const {
-        return this->pieces_[pos.pos];
-    }
-    inline const ChessPiece *pieces() const {
-        return this->pieces_;
+    inline ChessPiece piece(ChessPos pos) const {
+        return this->pieces_[pos];
     }
     inline const ChessPieceList &pieceList(ChessPiece piece) const {
-        return this->pieceList(piece.data);
-    }
-    inline const ChessPieceList &pieceList(char ind) const {
-        return this->pieceLists_[ind];
+        return this->pieceLists_[piece];
     }
     inline const size_t &key() const {
         return this->boardHistory_.back();
@@ -82,7 +78,10 @@ class ChessBoard {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
     inline ChessPos enPassantSquare() const {
-        return ChessPos(((this->boardData_.back() >> 4) & 0b1111111));
+        return (this->boardData_.back() >> 4) & 0b1111111;
+    }
+    inline bool canCastle(Player player, bool kingside){
+        return this->boardData_.back() & (1 << (player << 1 + !kingside));
     }
 
     int turnNum() const;

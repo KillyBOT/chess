@@ -376,7 +376,7 @@ int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
     int score;
 
     for(ChessMove move : mg.getMoves(board)){
-        if(move.captured.type() != kPieceNone){
+        if(move.isCapturing()){
             board.doMove(move);
             score = -this->evalHelpQuiescence(board, -beta, -alpha);
             board.undoLastMove();

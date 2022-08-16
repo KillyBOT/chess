@@ -18,19 +18,19 @@ int move_generation_test(ChessBoard &board, int depth){
 
     //board.printBoard();
     //board.printPieces();
+    //print_bitboard(board.occupied());
 
-    MoveGenerator mg;
-    mg.setBoard(board);
-    //mg.printAttacked();
+    gMoveGenerator.setBoard(board);
+    //gMoveGenerator.printAttacked();
 
     if(depth <= 0) return 1;
     int positionNum = 0;
     int toAdd;
 
-    for(ChessMove move : mg.getMoves()){
+    for(ChessMove move : gMoveGenerator.getMoves()){
         board.doMove(move);
         toAdd = move_generation_test(board, depth-1);
-        //if(depth == 5) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
+        //if(depth == 1) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
         board.undoLastMove();
     }
@@ -49,31 +49,35 @@ int main()
     using std::chrono::seconds;
     using std::chrono::system_clock;
 
-    initRayTable();
-    initKnightPositionTable();
+    init_ray_table();
+    init_knight_position_table();
+    init_masks();
     init_zobrist_nums();
 
     MoveGenerator mg;
 
     // ChessBoard board(false);
-    // board.addPiece(ChessPos("a1"),ChessPiece(kPieceKing,  kPlayerWhite));
-    // board.addPiece(ChessPos("h8"),ChessPiece(kPieceKing,kPlayerBlack));
-    // board.addPiece(ChessPos("c2"),ChessPiece(kPiecePawn, kPlayerWhite));
-    // board.addPiece(ChessPos("d4"),ChessPiece(kPiecePawn, kPlayerBlack));
+    // board.addPiece(new_pos("a1"),new_piece(kPieceKing,  kPlayerWhite));
+    // board.addPiece(new_pos("h8"),new_piece(kPieceKing, kPlayerBlack));
+    // //board.addPiece(new_pos("e7"),new_piece(kPieceBishop, kPlayerBlack));
+    // //board.addPiece(new_pos("b6"),new_piece(kPiecePawn, kPlayerWhite));
+    // //board.addPiece(new_pos("f5"),new_piece(kPiecePawn, kPlayerWhite));
+    // board.addPiece(new_pos("h4"),new_piece(kPieceRook, kPlayerBlack));
+    // board.addPiece(new_pos("f4"),new_piece(kPiecePawn, kPlayerWhite));
+    // //board.addPiece(new_pos("b4"),new_piece(kPiecePawn, kPlayerWhite));
+    // //board.addPiece(new_pos("d2"),new_piece(kPiecePawn, kPlayerWhite));
+    // //board.addPiece(new_pos("d7"),new_piece(kPiecePawn, kPlayerWhite));
 
     // board.printBoard();
-    // board.doMove(mg.getMoves(board)[4]);
     // mg.setBoard(board);
-    // board.printBoard();
     // mg.printAttacked();
-    // for(ChessMove move : mg.getMoves()) cout << move.str() << endl;
 
     ChessBoard board;
-    //board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-    //board.fromFen("rnQq1k1r/pp2bppp/8/2p5/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1");
+    // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    // board.fromFen("rnbq1k1r/pp1P1ppp/2p5/8/2B4b/8/PPP1NnPP/RNBQ1K1R w - - 0 1");
     board.printBoard();
 
-    for(int i = 1; i < 5; i++){
+    for(int i = 1; i < 6; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         int positionNum = move_generation_test(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -81,7 +85,7 @@ int main()
     }
 
     // MCTS mcts = MCTS(2000);
-    // Minimax minimax = Minimax(heuristic_complex, 5);
+    // Minimax minimax = Minimax(heuristic_basic, 4);
 
     // mg.setBoard(board);
     // srand(time(NULL));
@@ -121,6 +125,17 @@ int main()
     //     cout << "Knight positions:" << endl;
     //     for(ChessPos pos : kKnightPositionTable[start]) cout << pos.str() << endl;
     //     cout << endl;
+    // }
+    // for(int i = 0; i < 8; i++){
+    //     print_bitboard(kRankMasks[i]);
+    //     print_bitboard(kFileMasks[i]);
+    // }
+    // for(ChessPos pos = 0; pos < 64; pos++){
+    //     cout << pos_str(pos) << endl;
+    //     print_bitboard(kDiagMasks[pos]);
+    //     cout << endl;
+    //     print_bitboard(kAntiDiagMasks[pos]);
+    //     cout << endl << endl;
     // }
     return 0;
 }

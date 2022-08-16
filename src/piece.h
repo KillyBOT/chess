@@ -8,25 +8,37 @@
 
 using namespace chess_defs;
 
-struct ChessPiece {
+using ChessPiece = char;
 
-    Byte data;
-    bool hasMoved;
+inline PieceType piece_type(ChessPiece piece) {
+    return piece & 0b111;
+}
+inline Player piece_player(ChessPiece piece) {
+    return piece >> 3;
+}
 
-    ChessPiece(Byte data = 0);
-    ChessPiece(PieceType type, Player player);
-    ChessPiece(const ChessPiece &piece);
+ChessPiece new_piece(PieceType type, Player player);
+char piece_char(ChessPiece piece, bool incPlayer = true);
 
-    bool operator==(const ChessPiece &piece) const;
+// struct ChessPiece {
 
-    inline PieceType type() const {
-        return (this->data & 0b111);
-    }
-    inline Player player() const {
-        return this->data >> 3;
-    }
+//     Byte data;
+//     bool hasMoved;
 
-    char pieceChar(bool usePlayer = true) const;
-};
+//     ChessPiece(Byte data = 0);
+//     ChessPiece(PieceType type, Player player);
+//     ChessPiece(const ChessPiece &piece);
+
+//     bool operator==(const ChessPiece &piece) const;
+
+//     inline PieceType type() const {
+//         return (this->data & 0b111);
+//     }
+//     inline Player player() const {
+//         return this->data >> 3;
+//     }
+
+//     char pieceChar(bool usePlayer = true) const;
+// };
 
 #endif

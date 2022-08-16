@@ -73,7 +73,7 @@ int main()
     // mg.printAttacked();
 
     ChessBoard board;
-    // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
     // board.fromFen("rnbq1k1r/pp1P1ppp/2p5/8/2B4b/8/PPP1NnPP/RNBQ1K1R w - - 0 1");
     board.printBoard();
 

@@ -263,6 +263,7 @@ void MoveGenerator::genKingMoves(vector<ChessMove> &moves) const {
         move.moveData = kMoveIsCastling;
         //Queenside
         if(
+            this->board_->canCastle(this->player_, false) &&
             this->board_->piece(new_pos('a',pos_rank_char(this->kingPos_))) == new_piece(kPieceRook, this->player_) &&
             !this->board_->piece(new_pos('b',pos_rank_char(this->kingPos_))) &&
             !this->board_->piece(new_pos('c',pos_rank_char(this->kingPos_))) &&
@@ -277,6 +278,7 @@ void MoveGenerator::genKingMoves(vector<ChessMove> &moves) const {
 
         //Kingside
         if(
+            this->board_->canCastle(this->player_, true) &&
             this->board_->piece(new_pos('h',pos_rank_char(this->kingPos_))) == new_piece(kPieceRook, this->player_) &&
             !this->board_->piece(new_pos('f',pos_rank_char(this->kingPos_))) &&
             !this->board_->piece(new_pos('g',pos_rank_char(this->kingPos_))) &&

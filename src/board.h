@@ -80,7 +80,7 @@ class ChessBoard {
     inline ChessPos enPassantSquare() const {
         return (this->boardData_.back() >> 4) & 0b1111111;
     }
-    inline bool canCastle(Player player, bool kingside){
+    inline bool canCastle(Player player, bool kingside) const {
         return this->boardData_.back() & (1 << (player << 1 + !kingside));
     }
 

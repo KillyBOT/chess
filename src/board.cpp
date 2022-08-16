@@ -255,6 +255,11 @@ void ChessBoard::addNewKey(ChessMove move) {
             castlingInfo &= kBoardDataBlackKingside;
             castlingInfo &= kBoardDataBlackQueenside;
         }
+    } else if(piece_type(move.piece) == kPieceRook){
+        if(move.oldPos == 0) castlingInfo &= kBoardDataWhiteQueenside;
+        else if(move.oldPos == 0b000111) castlingInfo &= kBoardDataWhiteKingside;
+        else if(move.oldPos == 0b111000) castlingInfo &= kBoardDataBlackQueenside;
+        else if(move.oldPos == 0b111111) castlingInfo &= kBoardDataBlackKingside;
     }
     newData |= castlingInfo;
 

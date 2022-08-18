@@ -22,6 +22,7 @@ class MoveGenerator {
     bool doEnPassantCheck_;
 
     BitBoard occupied_;
+    BitBoard opponentOccupied_;
     BitBoard attacked_;
     BitBoard pinned_;
     bool pinnedDirs_[64][8];
@@ -34,10 +35,11 @@ class MoveGenerator {
 
     void addPiecesInDir(vector<ChessPos> &positions, ChessPos start, int dir) const;
     
-    void genDiagAttacks(ChessPos start);
-    void genAntiDiagAttacks(ChessPos start);
-    void genRankAttacks(ChessPos start);
-    void genFileAttacks(ChessPos start);
+    BitBoard dirAttacks(ChessPos start, BitBoard occupied, int dir) const;
+    BitBoard diagAttacks(ChessPos start) const;
+    BitBoard antiDiagAttacks(ChessPos start) const;
+    BitBoard rankAttacks(ChessPos start) const;
+    BitBoard fileAttacks(ChessPos start) const;
 
     void genPawnAttacks();
     void genKnightAttacks();
@@ -53,7 +55,12 @@ class MoveGenerator {
     void genSlidingMoves(vector<ChessMove> &moves) const;
 
     void setAttacked();
+    void setPinned();
+    void setForced();
     void setPinnedAndForced();
+
+    vector<ChessMove> genPseudoLegalMoves() const;
+    vector<ChessMove> genLegalMoves(vector<ChessMove> &moves);
 
     public:
 

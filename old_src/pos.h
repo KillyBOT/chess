@@ -4,24 +4,49 @@
 #include <string>
 #include <vector>
 
-struct ChessPos{
-    char row, col;
+#include "chess_defs.h"
 
-    ChessPos(const ChessPos &pos);
-    ChessPos(char col = 'a', char row = 0);
+using ChessPos = char;
 
-    bool isInBounds() const;
-    int asInt() const;
-    std::string str() const;
-    std::string str_int() const;
+ChessPos new_pos(char file, char rank);
+ChessPos new_pos(std::string str);
 
-    bool operator==(const ChessPos &other) const;
-};
+inline bool pos_in_bounds(ChessPos pos){
+    return pos >= 0 && pos < 64;
+}
+inline char pos_rank(ChessPos pos){
+    return pos >> 3;
+}
+inline char pos_file(ChessPos pos) {
+    return pos & 0b111;
+}
+inline char pos_rank_char(ChessPos pos){
+    return pos_rank(pos) + '1';
+}
+inline char pos_file_char(ChessPos pos){
+    return pos_file(pos) + 'a';
+}
 
-struct ChessPosHash{
-    std::size_t operator() (const ChessPos &pos) const;
-};
+std::string pos_str(ChessPos pos);
 
-std::vector<ChessPos> positions_in_ray(ChessPos start, char dCol, char dRow);
+// struct ChessPos{
+//     char pos;
+
+//     ChessPos();
+//     ChessPos(char pos);
+//     ChessPos(char file, char rank);
+//     ChessPos(std::string str);
+//     ChessPos(const ChessPos &pos);
+
+//     bool inBounds() const;
+//     char rankChar() const;
+//     char fileChar() const;
+//     char rank() const;
+//     char file() const;
+//     std::string str() const;
+
+//     bool operator==(const ChessPos &other) const;
+//     bool operator!=(const ChessPos &other) const;
+// };
 
 #endif

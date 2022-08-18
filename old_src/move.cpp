@@ -1,65 +1,74 @@
-#include <iostream>
-#include <vector>
 #include <string>
+#include <iostream>
 
-#include "piece.h"
-#include "pos.h"
 #include "move.h"
 
-using std::string;
-
-ChessMove::ChessMove(ChessPiece piece, ChessPos pos, ChessPos newPos){
-    this->pos = pos;
-    this->newPos = newPos;
+ChessMove::ChessMove(){
+    this->piece = 0;
+    this->captured = 0;
+    this->oldPos = -1;
+    this->newPos = -1;
+    this->moveData = kMoveNone;
+}
+ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
-    this->capture = ChessPiece();
-    this->isCastling = false;
-    this->isPromoting = false;
-    this->isEnPassant = false;
-    this->isEnPassantEligible = false;
-    this->castlingSide = false;
-    this->score = 0;
+    this->captured = 0;
+    this->oldPos = oldPos;
+    this->newPos = newPos;
+    this->moveData = kMoveNone;
 }
-
-ChessMove::ChessMove(const ChessMove &move){
-    this->pos = move.pos;
-    this->newPos = move.newPos;
+ChessMove::ChessMove(const ChessMove &move) {
     this->piece = move.piece;
-    this->capture = move.capture;
-    this->isCastling = move.isCastling;
-    this->isPromoting = move.isPromoting;
-    this->isEnPassant = move.isEnPassant;
-    this->isEnPassantEligible = move.isEnPassantEligible;
-    this->castlingSide = move.castlingSide;
-    this->score = move.score;
+    this->captured = move.captured;
+    this->oldPos = move.oldPos;
+    this->newPos = move.newPos;
+    this->moveData = move.moveData;
 }
 
-//Theoretically, you should never have a situation where the old pos is never out of bounds
-bool ChessMove::isInBounds() const {
-    return this->newPos.isInBounds();
+PieceType ChessMove::promotionType() const {
+    switch(this->moveData){
+        case kMovePromotingToQueen:
+        return kPieceQueen;
+        case kMovePromotingToRook:
+        return kPieceRook;
+        case kMovePromotingToKnight:
+        return kPieceKnight;
+        case kMovePromotingToBishop:
+        return kPieceBishop;
+    }
+    return kPieceNone;
 }
-
-string ChessMove::basicStr() const {
-    string str;
-    str = this->piece.pieceChar();
-    return str + " " + this->pos.str() + " " + this->newPos.str();
+bool ChessMove::isValid() const {
+    return pos_in_bounds(newPos) && this->oldPos != this->newPos;
 }
-
-string ChessMove::str() const {
-    string str;
-    if(this->piece.pieceType != kPiecePawn && !this->isPromoting) str += this->piece.pieceChar(false);
-    if(this->capture.pieceType != kPieceNone) str += 'x';
-
-    str += this->newPos.str();
-
-    if(this->isPromoting){
-        str += "=" + this->piece.pieceChar(false);
+std::string ChessMove::str() const {
+    std::string str;
+    if(this->moveData == kMoveIsCastling){
+        if(this->isCastlingKingside()) return "0-0";
+        else return "0-0-0";
     }
 
-    if(this->isCastling){
-        if(this->newPos.col == 'b') str = "0-0-0";
-        else str = "0-0";
+    if(piece_type(this->piece) != kPiecePawn) str += piece_char(this->piece);
+    if(piece_type(this->captured) != kPieceNone) str += 'x';
+    str += pos_str(this->newPos);
+
+    if(this->promotionType()){
+        str += '=';
+        str += piece_char(new_piece(this->promotionType(), piece_player(this->piece)));
     }
 
     return str;
+}
+std::string ChessMove::strUCI() const {
+    std::string str;
+    str += pos_str(this->oldPos);
+    str += pos_str(this->newPos);
+    if(this->isPromoting()){
+        str += piece_char(new_piece(this->promotionType(), kPlayerBlack));
+    }
+
+    return str;
+}
+bool ChessMove::isCastlingKingside() const {
+    return pos_file_char(this->newPos) == 'g';
 }

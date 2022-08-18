@@ -148,7 +148,7 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 }
 
 //Does everything the basic heuristic search does, but also uses attacked squares, number of pinned pieces, and a position evaluation in the calculation
-int heuristic_complex(ChessBoard &board, Player maxPlayer){
+/*int heuristic_complex(ChessBoard &board, Player maxPlayer){
     mg.setBoard(board);
     Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
     int score = 0;
@@ -160,27 +160,27 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
     
     score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
 
-    score -= mg.attacked().size() * kAttackedCoefficient;
-    score -= mg.pinned().size() * kPinnedCoefficient;
+    //score -= mg.attacked().size() * kAttackedCoefficient;
+    //score -= mg.pinned().size() * kPinnedCoefficient;
 
-    mg.player_ = board.opponent();
-    mg.opponent_ = board.player();
-    mg.setKingPos();
-    mg.setAttacked();
-    mg.setPinned();
+    //mg.player_ = board.opponent();
+    //mg.opponent_ = board.player();
+    //mg.setKingPos();
+    //mg.setAttacked();
+    //mg.setPinned();
 
-    score += mg.attacked().size() * kAttackedCoefficient;
-    score += mg.pinned().size() * kPinnedCoefficient;
+    //score += mg.attacked().size() * kAttackedCoefficient;
+    //score += mg.pinned().size() * kPinnedCoefficient;
 
-    mg.setBoard(board);
+    //mg.setBoard(board);
 
     int positionScore = 0;
     int intPos;
 
-    for(auto iter : board.pieces()){
-        intPos = iter.first.asInt();
-        if(iter.second.player == kPlayerWhite){
-            switch(iter.second.pieceType){
+    for(int i = 0; i < board.pieceNum(); i++){
+        intPos = board.piecePositions()[i].pos;
+        if(board.piece(board.piecePositions()[i]) == kPlayerWhite){
+            switch(board.piece(board.piecePositions()[i]).type()){
                 case kPiecePawn:
                 positionScore += kPawnTableWhite[intPos];
                 break;
@@ -201,7 +201,7 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
                 break;
             }
         } else {
-            switch(iter.second.pieceType){
+            switch(board.piece(board.piecePositions()[i]).type()){
                 case kPiecePawn:
                 positionScore -= kPawnTableBlack[intPos];
                 break;
@@ -227,7 +227,7 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
     score += (maxPlayer == kPlayerWhite ? positionScore : -positionScore) * kPositionCoefficient;
 
     return score;
-}
+}*/
 
 TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
     this->val = val;
@@ -235,9 +235,9 @@ TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
 }
 
 int Minimax::evalBoard(ChessBoard &board){
-    if(!this->boardScores_.count(board.zobristKey())) {
+    if(!this->boardScores_.count(board.key())) {
         int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
-        this->boardScores_.emplace(board.zobristKey(), this->heuristicFunc_(board, this->maxPlayer_));
+        this->boardScores_.emplace(board.key(), this->heuristicFunc_(board, this->maxPlayer_));
     }
 
     // if(this->boardScores_.at(board.zobristKey()) != 0) {
@@ -245,12 +245,12 @@ int Minimax::evalBoard(ChessBoard &board){
     //     board.printBoard();
     // }
 
-    return this->boardScores_.at(board.zobristKey());
+    return this->boardScores_.at(board.key());
 }
 
 int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 
-    if(this->getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
+    if(mg.getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
 
     int val;
 
@@ -258,7 +258,7 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 
         val = -2147483647;
 
-        for(ChessMove move : this->getMoves(board)){
+        for(ChessMove move : mg.getMoves(board)){
             board.doMove(move);
             val = std::max(evalHelpMinimax(board,depth-1),val);
             board.undoLastMove();
@@ -268,7 +268,7 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 
         val = 2147483647;
 
-        for(ChessMove move : this->getMoves(board)){
+        for(ChessMove move : mg.getMoves(board)){
             board.doMove(move);
             val = std::min(evalHelpMinimax(board,depth-1),val);
             board.undoLastMove();
@@ -281,14 +281,14 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
 int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     // std::cout << depth << std::endl;
-    int val;
+    /*int val;
 
-    if(!this->transpositionTable_.count(board.zobristKey()) || this->transpositionTable_.at(board.zobristKey()).depth < depth){
+    if(!this->transpositionTable_.count(board.key()) || this->transpositionTable_.at(board.key()).depth < depth){
         int val;
 
-        if(this->transpositionTable_.count(board.zobristKey())) this->transpositionTable_.erase(board.zobristKey());
+        if(this->transpositionTable_.count(board.key())) this->transpositionTable_.erase(board.key());
 
-        if(this->getMoves(board).empty()) {
+        if(mg.getMoves(board).empty()) {
             depth = 2147483647;
             val = this->evalBoard(board);
         }
@@ -302,7 +302,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
                 val = -2147483647;
 
-                for(ChessMove move : this->getMoves(board)){
+                for(ChessMove move : mg.getMoves(board)){
                     board.doMove(move);
                     val = std::max(evalHelpAB(board, depth-1, alpha, beta), val);
                     board.undoLastMove();
@@ -314,7 +314,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
                 val = 2147483647;
 
-                for(ChessMove move : this->getMoves(board)){
+                for(ChessMove move : mg.getMoves(board)){
                     board.doMove(move);
                     val = std::min(evalHelpAB(board, depth-1, alpha, beta), val);
                     board.undoLastMove();
@@ -325,13 +325,15 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
             }
         }
 
-        this->transpositionTable_.emplace(board.zobristKey(),TranspositionTableEntry(val, depth));
+        this->transpositionTable_.emplace(board.key(),TranspositionTableEntry(val, depth));
     
     }
 
-    return this->transpositionTable_.at(board.zobristKey()).val;
+    return this->transpositionTable_.at(board.key()).val;*/
 
-    /*if(this->getMoves(board).empty() || depth <= 0){
+    //board.printBoard();
+
+    if(mg.getMoves(board).empty() || depth <= 0){
         if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
         else return this->evalBoard(board);
     }
@@ -341,7 +343,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
         val = -2147483647;
 
-        for(ChessMove move : this->getMoves(board)){
+        for(ChessMove move : mg.getMoves(board)){
             board.doMove(move);
             val = std::max(evalHelpAB(board, depth-1, alpha, beta), val);
             board.undoLastMove();
@@ -353,7 +355,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
         val = 2147483647;
 
-        for(ChessMove move : this->getMoves(board)){
+        for(ChessMove move : mg.getMoves(board)){
             board.doMove(move);
             val = std::min(evalHelpAB(board, depth-1, alpha, beta), val);
             board.undoLastMove();
@@ -363,7 +365,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     }
 
-    return val;*/
+    return val;
 }
 int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
     int stand_pat = this->evalBoard(board);
@@ -373,8 +375,8 @@ int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
 
     int score;
 
-    for(ChessMove move : this->getMoves(board)){
-        if(move.capture.pieceType != kPieceNone){
+    for(ChessMove move : mg.getMoves(board)){
+        if(move.isCapturing()){
             board.doMove(move);
             score = -this->evalHelpQuiescence(board, -beta, -alpha);
             board.undoLastMove();
@@ -411,7 +413,7 @@ ChessMove Minimax::findOptimalMove(ChessBoard &board){
 
     auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
-    for(ChessMove move: this->getMoves(board)){
+    for(ChessMove move: mg.getMoves(board)){
         //std::cout << child.player() << std::endl;
         //child.printBoard();
 

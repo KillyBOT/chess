@@ -3,12 +3,13 @@
 
 #include <vector>
 #include <string>
-#include <array>
 #include <unordered_map>
-#include <unordered_set>
 
+#include "piece_list.h"
+#include "chess_defs.h"
 #include "piece.h"
 #include "move.h"
+#include "bitboard.h"
 
 using std::pair;
 using std::vector;
@@ -18,93 +19,93 @@ using std::unordered_map;
 using std::unordered_set;
 using std::size_t;
 
-using namespace chess_defs;
+extern size_t kZobristPieceNums[64][16];
+extern size_t kZobristBlackToMoveNum;
+extern size_t kZobristCastlingNums[16];
+extern size_t kZobristEnPassantNums[9];
 
-using ChessPosSet = unordered_set<ChessPos, ChessPosHash>;
+const Byte kBoardDataWhiteKingside = 0b1110;
+const Byte kBoardDataWhiteQueenside = 0b1101;
+const Byte kBoardDataBlackKingside = 0b1011;
+const Byte kBoardDataBlackQueenside = 0b0111;
 
 class ChessBoard {
 
-    //friend class ChessBoardHash;
+    ChessPiece pieces_[64];
+    ChessPieceList pieceLists_[16];
+    BitBoard occupied_;
 
-    unordered_map<ChessPos, ChessPiece, ChessPosHash> pieces_;
     vector<ChessMove> moves_;
-    unordered_map<size_t, int> seenBoards_;
+    vector<unsigned int> boardData_;
+    vector<size_t> boardHistory_;
     
-    //For use with the zobrist hash
-    //First bit is if there's an en passant file
-    //Second 3 bits are the en passant file
-    //Last 4 bits are the castling rights of the current board
-    vector<Byte> gameData_; 
-    vector<size_t> boardHashHistory_;
-    //size_t hash_;
-    array<array<size_t,12>,64> zobristPieces_;
-    size_t zobristBlackToMove_;
-    array<size_t, 16> zobristCastlingRights_;
-    array<size_t, 8> zobristEnPassantFile_;
+    bool blackToMove_;
+    ChessPos whiteKingPos_, blackKingPos_;
 
-    //void updateHash();
-    void updateZobrist(ChessMove move);
-    void addBoardToSeen();
+    void addNewKey(ChessMove move);
 
-    
     public:
 
-    ChessBoard(bool fill = true);
-    ChessBoard(vector<ChessMove> moves);
-    ChessBoard(const ChessBoard &oldBoard);
-    bool operator==(const ChessBoard &other) const;
-    bool operator!=(const ChessBoard &other) const;
+    ChessBoard(bool initBoard = true);
+    ChessBoard(std::string fenStr);
+    ChessBoard(const ChessBoard &board);
 
-    inline int turnNum() const{
-        return (this->moves_.size() >> 1) + 1;
-    }
     inline Player player() const {
-        return (this->moves_.size() & 1) ? kPlayerBlack : kPlayerWhite;
+        return this->blackToMove_ ? kPlayerBlack : kPlayerWhite;
     }
     inline Player opponent() const {
-        return(this->player() == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
+        return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
     }
-    inline ChessMove lastMove() const {
+    inline BitBoard occupied() const {
+        return this->occupied_;
+    }
+    inline ChessPiece piece(ChessPos pos) const {
+        return this->pieces_[pos];
+    }
+    inline const ChessPieceList &pieceList(ChessPiece piece) const {
+        return this->pieceLists_[piece];
+    }
+    inline const size_t &key() const {
+        return this->boardHistory_.back();
+    }
+    inline const ChessMove &lastMove() const {
         return this->moves_.back();
     }
-    inline bool hasPiece(ChessPos pos) const {
-        return this->pieces_.count(pos);
+    inline const Byte movesSinceLastCapture() const {
+        return this->boardData_.back() >> 11;
     }
-    inline const ChessPiece &piece(ChessPos pos) const {
-        return this->pieces_.at(pos);
+    inline ChessPos kingPos(Player player) const {
+        return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
-    inline const unordered_map<ChessPos, ChessPiece, ChessPosHash> &pieces() const {
-        return this->pieces_;
+    inline ChessPos enPassantSquare() const {
+        return (this->boardData_.back() >> 4) & 0b1111111;
     }
-    inline const vector<ChessMove> &moves() const {
-        return this->moves_;
-    }
-    inline const unordered_map<size_t, int> &seenBoards() const {
-        return this->seenBoards_;
-    }
-    inline const size_t &zobristKey() const {
-        return this->boardHashHistory_.back();
+    inline bool canCastle(Player player, bool kingside) const {
+        return this->boardData_.back() & (1 << (player << 1 + !kingside));
     }
 
+    int turnNum() const;
     int playerScore(Player player) const;
+    std::string fen() const;
 
     void printBoard() const;
     void printMoves() const;
+    void printPieces() const;
 
-    void resetZobrist();
+    //WARNING: if it's an invalid position, it will not work!
     void addPiece(ChessPos pos, ChessPiece piece);
-    void removePiece(ChessPos pos);
+    //WARNING: if it's an invalid position, it will not work!
+    ChessPiece removePiece(ChessPos pos);
+    //WARNING: if either of the positions are invalid, it will not work!
+    void movePiece(ChessPos oldPos, ChessPos newPos);
+    void resetKeys(unsigned int data);
+    void fromFen(std::string fen);
 
-    //vector<ChessMove> getPossibleMoves() const;
-    void doMove(ChessMove move, bool updateHash = true);
-    void undoMove(ChessMove move, bool updateHash = true);
-    void undoLastMove(bool updateHash = true);
-
+    void doMove(ChessMove move, bool update = true);
+    void undoMove(ChessMove move, bool update = true);
+    void undoLastMove();
 };
 
-class ChessBoardHash {
-    public:
-    std::size_t operator()(ChessBoard const& board) const;
-};
+void init_zobrist_nums();
 
 #endif

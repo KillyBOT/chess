@@ -19,13 +19,10 @@ class ChessAI {
 
     public:
 
-    ChessAI(string name);
+    ChessAI(string name) : name_{name} {};
 
-    string name() const;
-
-    inline const vector<ChessMove> &getMoves(ChessBoard &board) {
-        if(!this->moveMap_.count(board.zobristKey())) this->moveMap_.emplace(board.zobristKey(),this->mg_.getMovesOrdered(board));
-        return this->moveMap_.at(board.zobristKey());
+    inline string name() const {
+        return this->name_;
     }
 
     virtual ChessMove findOptimalMove(ChessBoard &board) = 0;

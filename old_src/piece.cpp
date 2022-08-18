@@ -1,27 +1,65 @@
-#include <iostream>
-
 #include "piece.h"
 
-using namespace std;
+// ChessPiece::ChessPiece(Byte data){
+//     this->data = data;
+//     this->hasMoved = false;
+// }
+// ChessPiece::ChessPiece(PieceType type, Player player) {
+//     this->hasMoved = false;
+//     this->data = player;
+//     this->data <<= 3;
+//     this->data |= type;
+// }
+// ChessPiece::ChessPiece(const ChessPiece &piece) {
+//     this->data = piece.data;
+//     this->hasMoved = piece.hasMoved;
+// }
 
-ChessPiece::ChessPiece(PieceType pieceType, Player player){
-    this->pieceType = pieceType;
-    this->player = player;
-    this->moveNum = 0;
-}
-ChessPiece::ChessPiece(const ChessPiece &piece){
-    this->pieceType = piece.pieceType;
-    this->player = piece.player;
-    this->moveNum = piece.moveNum;
-}
-bool ChessPiece::operator==(const ChessPiece &other) const{
-    return this->pieceType == other.pieceType && this->player == other.player && this->moveNum == other.moveNum;
-}
-char ChessPiece::pieceChar(bool usePlayer) const{
+// bool ChessPiece::operator==(const ChessPiece &piece) const {
+//     return this->data == piece.data && this->hasMoved == piece.hasMoved;
+// }
 
+// char ChessPiece::pieceChar(bool usePlayer) const {
+//     char c;
+//     switch(this->type()) {
+//         case kPieceNone:
+//         c = 'X';
+//         break;
+//         case kPiecePawn:
+//         c = 'P';
+//         break;
+//         case kPieceRook:
+//         c = 'R';
+//         break;
+//         case kPieceKnight:
+//         c = 'N';
+//         break;
+//         case kPieceBishop:
+//         c = 'B';
+//         break;
+//         case kPieceQueen:
+//         c = 'Q';
+//         break;
+//         case kPieceKing:
+//         c = 'K';
+//         break;
+//     }
+//     if(usePlayer && this->player() == kPlayerBlack) c += 32;
+
+//     return c;
+// }
+
+ChessPiece new_piece(PieceType type, Player player) {
+    ChessPiece piece = type;
+    piece |= player << 3;
+    return piece;
+}
+char piece_char(ChessPiece piece, bool incPlayer) {
     char c;
-
-    switch(this->pieceType){
+    switch(piece_type(piece)) {
+        case kPieceNone:
+        c = 'X';
+        break;
         case kPiecePawn:
         c = 'P';
         break;
@@ -40,15 +78,8 @@ char ChessPiece::pieceChar(bool usePlayer) const{
         case kPieceKing:
         c = 'K';
         break;
-        case kPieceNone:
-        default:
-        c = 'X';
-        break;
     }
-
-    if(usePlayer && this->player == kPlayerBlack){
-        c += 32; //Go from uppercase to lowercase
-    }
+    if(incPlayer && piece_player(piece) == kPlayerBlack) c += 32;
 
     return c;
 }

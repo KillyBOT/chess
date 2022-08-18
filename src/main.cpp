@@ -28,11 +28,11 @@ int move_generation_test(ChessBoard &board, int depth){
     int toAdd;
 
     for(ChessMove move : gMoveGenerator.getMoves()){
-        board.doMove(move);
+        board.doMove(move,false);
         toAdd = move_generation_test(board, depth-1);
         //if(depth == 1) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
-        board.undoLastMove();
+        board.undoMove(move,false);
     }
 
     return positionNum;
@@ -77,7 +77,7 @@ int main()
     // board.fromFen("rnbq1k1r/pp1P1ppp/2p5/8/2B4b/8/PPP1NnPP/RNBQ1K1R w - - 0 1");
     board.printBoard();
 
-    for(int i = 1; i < 6; i++){
+    for(int i = 1; i < 5; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         int positionNum = move_generation_test(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -136,6 +136,14 @@ int main()
     //     cout << endl;
     //     print_bitboard(kAntiDiagMasks[pos]);
     //     cout << endl << endl;
+    // }
+    // for(ChessPos pos = 0; pos < 64; pos++){
+    //     cout << pos_str(pos) << endl;
+    //     for(int dir = 0; dir < 8; dir++){
+    //         print_bitboard(kRayMasks[pos][dir]);
+    //         cout << endl;
+    //     }
+    //     cout << endl;
     // }
     return 0;
 }

@@ -1,66 +1,77 @@
+#include <vector>
+#include <iostream>
 #include <string>
 
 #include "pos.h"
 
-using std::string;
-
-ChessPos::ChessPos(char col, char row){
-    this->col = col;
-    this->row = row;
+ChessPos new_pos(char file, char rank) {
+    ChessPos pos = rank - '1';
+    pos <<= 3;
+    pos |= file - 'a';
+    return pos;
+}
+ChessPos new_pos(std::string str) {
+    ChessPos pos = str[1] - '1';
+    pos <<= 3;
+    pos |= str[0] - 'a';
+    return pos;
 }
 
-ChessPos::ChessPos(const ChessPos &pos){
-    this->col = pos.col;
-    this->row = pos.row;
-}
-
-bool ChessPos::operator==(const ChessPos &other) const {
-    return (this->row == other.row && this->col == other.col);
-}
-
-inline bool ChessPos::isInBounds() const {
-    return this->col >= 'a' && this->col <= 'h' && this->row >= 1 && this->row <= 8;
-}
-
-int ChessPos::asInt() const {
-    return (int)(this->col - 'a') * 8 + (int)(this->row - 1);
-}
-
-string ChessPos::str() const{
-    if(!this->isInBounds()) return "Pos out of bounds!";
-    string str;
-    str += this->col;
-    str += this->row  + '0';
+std::string pos_str(ChessPos pos) {
+    std::string str;
+    str += pos_file_char(pos);
+    str += pos_rank_char(pos);
     return str;
 }
 
-string ChessPos::str_int() const{
-    string str;
-    str += std::to_string((int)(this->col) - 'a');
-    str += ' ';
-    str += std::to_string((int)(this->row));
-    return str;
-}
+// ChessPos::ChessPos(){
+//     this->pos = -1;
+// }
+// ChessPos::ChessPos(char pos){
+//     this->pos = pos;
+// }
+// ChessPos::ChessPos(char file, char rank) {
+//     this->pos = (rank - '1');
+//     this->pos <<= 3;
+//     this->pos |= (file - 'a');
+// }
+// //WARNING: don't put in random strings, cuz it's gonna break
+// ChessPos::ChessPos(std::string str) {
+//     this->pos = (str[1] - '1');
+//     this->pos <<= 3;
+//     this->pos |= (str[0] - 'a');
+// }
 
-std::size_t ChessPosHash::operator() (const ChessPos &pos) const {
-    // std::size_t hash = pos.col;
-    // hash <<= 8;
-    // hash |= pos.row;
-    // return hash;
-    return ((pos.row << 8) | pos.col) << 8;
-}
+// ChessPos::ChessPos(const ChessPos &pos) {
+//     this->pos = pos.pos;
+// }
 
-std::vector<ChessPos> positions_in_ray(ChessPos start, char dCol, char dRow){
-    std::vector<ChessPos> positions;
+// bool ChessPos::inBounds() const {
+//     return pos >= 0 && pos < 64;
+// }
+// char ChessPos::rankChar() const {
+//     return (char)((this->pos >> 3) + '1');
+// }
+// char ChessPos::fileChar() const {
+//     return (char)((this->pos & 0b111) + 'a');
+// }
+// char ChessPos::rank() const {
+//     return this->pos >> 3;
+// }
+// char ChessPos::file() const {
+//     return this->pos & 0b111;
+// }
+// std::string ChessPos::str() const {
+//     std::string str;
+//     str += this->fileChar();
+//     str += this->rankChar();
+//     return str;
+// }
 
-    start.col += dCol;
-    start.row += dRow;
+// bool ChessPos::operator==(const ChessPos &other) const {
+//     return this->pos == other.pos;
+// }
 
-    while(start.isInBounds()){
-        positions.push_back(start);
-        start.col += dCol;
-        start.row += dRow;
-    }
-
-    return positions;
-}
+// bool ChessPos::operator!=(const ChessPos &other) const {
+//     return this->pos != other.pos;
+// }

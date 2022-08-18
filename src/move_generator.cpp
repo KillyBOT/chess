@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include <bit>
 #include <unordered_map>
 
 #include "board.h"
@@ -73,7 +74,26 @@ void MoveGenerator::addPiecesInDir(vector<ChessPos> &positions, ChessPos start, 
     }
 }
 
-void MoveGenerator::genDiagAttacks(ChessPos start) {
+BitBoard MoveGenerator::dirAttacks(ChessPos start, BitBoard occupied, int dir) const{
+    BitBoard blockers = occupied & kRayMasks[start][dir];
+    int first;
+    switch(dir){
+        case kRayDirN:
+        case kRayDirE:
+        case kRayDirNE:
+        case kRayDirNW:
+        first = bitscan_forward(blockers);
+        break;
+        case kRayDirS:
+        case kRayDirW:
+        case kRayDirSE:
+        case kRayDirSW:
+        first = bitscan_reverse(blockers);
+        break;
+    }
+    return kRayMasks[start][dir] & ~kRayMasks[first][dir];
+}
+BitBoard MoveGenerator::diagAttacks(ChessPos start) const{
     //std::cout << pos_str(start) << std::endl;
     BitBoard forward, reverse;
     forward = this->occupied_ & kDiagMasks[start];
@@ -84,12 +104,11 @@ void MoveGenerator::genDiagAttacks(ChessPos start) {
     forward &= kDiagMasks[start];
 
     //print_bitboard(this->attacked_);
-    this->attacked_ |= forward;
+    return forward;
     //print_bitboard(this->attacked_);
 
 }
-
-void MoveGenerator::genAntiDiagAttacks(ChessPos start) {
+BitBoard MoveGenerator::antiDiagAttacks(ChessPos start) const{
     //std::cout << pos_str(start) << std::endl;
     BitBoard forward, reverse;
     forward  = this->occupied_ & kAntiDiagMasks[start];
@@ -100,12 +119,11 @@ void MoveGenerator::genAntiDiagAttacks(ChessPos start) {
     forward &= kAntiDiagMasks[start];
 
     //print_bitboard(this->attacked_);
-    this->attacked_ |= forward;
+    return forward;
     //print_bitboard(this->attacked_);
 
 }
-
-void MoveGenerator::genFileAttacks(ChessPos start) {
+BitBoard MoveGenerator::fileAttacks(ChessPos start) const{
     //std::cout << pos_str(start) << std::endl;
     BitBoard forward, reverse;
     forward  = this->occupied_ & kFileMasks[pos_file(start)];
@@ -116,11 +134,11 @@ void MoveGenerator::genFileAttacks(ChessPos start) {
     forward &= kFileMasks[pos_file(start)];
 
     //print_bitboard(this->attacked_);
-    this->attacked_ |= forward;
+    return forward;
     //print_bitboard(this->attacked_);
 
 }
-void MoveGenerator::genRankAttacks(ChessPos start){
+BitBoard MoveGenerator::rankAttacks(ChessPos start) const{
     //std::cout << pos_str(start) << std::endl;
     BitBoard forward, reverse;
     forward  = this->occupied_ & kRankMasks[pos_rank(start)];
@@ -131,9 +149,10 @@ void MoveGenerator::genRankAttacks(ChessPos start){
     forward &= kRankMasks[pos_rank(start)];
 
     //print_bitboard(this->attacked_);
-    this->attacked_ |= forward;
+    return forward;
     //print_bitboard(this->attacked_);
 }
+
 void MoveGenerator::genPawnAttacks() {
     // char dirL, dirR;
 
@@ -189,8 +208,9 @@ void MoveGenerator::genSlidingAttacks() {
     for(int i = 0; i < rookList.size(); i++){
 
         const ChessPos &start = rookList[i];
-        this->genFileAttacks(start);
-        this->genRankAttacks(start);
+        for(int dir = 0; dir < 4; dir++) this->attacked_ |= this->dirAttacks(start, this->occupied_, dir);
+        // this->genFileAttacks(start);
+        // this->genRankAttacks(start);
         // this->attacked_ |= (occupied ^ ((occupied) - (kOne << (start + 1)))) & kFileMasks[pos_file(start)];
         //this->attacked_ |= (occupied ^ (occupied - (kOne << (start + 1)))) & kRankMasks[pos_rank(start)];
         //print_bitboard(this->attacked_);
@@ -210,8 +230,9 @@ void MoveGenerator::genSlidingAttacks() {
     for(int i = 0; i < bishopList.size(); i++){
 
         const ChessPos &start = bishopList[i];
-        this->genDiagAttacks(start);
-        this->genAntiDiagAttacks(start);
+        for(int dir = 4; dir < 8; dir++) this->attacked_ |= this->dirAttacks(start, this->occupied_, dir);
+        // this->genDiagAttacks(start);
+        // this->genAntiDiagAttacks(start);
 
         // for(int dir = 4; dir < 8; dir++){
             
@@ -227,10 +248,11 @@ void MoveGenerator::genSlidingAttacks() {
     for(int i = 0; i < queenList.size(); i++){
 
         const ChessPos &start = queenList[i];
-        this->genFileAttacks(start);
-        this->genRankAttacks(start);
-        this->genDiagAttacks(start);
-        this->genAntiDiagAttacks(start);
+        for(int dir = 0; dir < 8; dir++) this->attacked_ |= this->dirAttacks(start, this->occupied_, dir);
+        // this->genFileAttacks(start);
+        // this->genRankAttacks(start);
+        // this->genDiagAttacks(start);
+        // this->genAntiDiagAttacks(start);
 
         // for(int dir = 0; dir < 8; dir++){
             
@@ -515,12 +537,34 @@ void MoveGenerator::setPinnedAndForced() {
     this->cannotMove_ = false;
     PieceType pieceToCheck = kPieceRook;
 
-    char dirL, dirR;
+    // BitBoard queenPositions = this->board_->pieceList(kPieceListInd[kPieceQueen][this->opponent_]).mask();
+    // BitBoard rookPositions = this->board_->pieceList(kPieceListInd[kPieceRook][this->opponent_]).mask();
+    // BitBoard bishopPositions = this->board_->pieceList(kPieceListInd[kPieceBishop][this->opponent_]).mask();
+    // BitBoard knightPositions = this->board_->pieceList(kPieceListInd[kPieceKnight][this->opponent_]).mask();
+    // BitBoard pawnPositions = this->board_->pieceList(kPieceListInd[kPiecePawn][this->opponent_]).mask();
+    // BitBoard opponentSliding = queenPositions | rookPositions;
+    // BitBoard opponentPositions = queenPositions | rookPositions | bishopPositions | knightPositions | pawnPositions | kPosMasks[this->board_->kingPos(this->opponent_)];
+    // BitBoard playerPositions = this->occupied_ ^ opponentPositions;
 
-    //First look in 8 directions for sliding pieces
+    // BitBoard attacks;
+    // BitBoard potentialPinned;
+
+    char dirL, dirR;
 
     bool foundPinned;
     char pinnedPos;
+
+    //First look for queens and bishops 
+    // for(int dir = 0; dir < 8; dir++){
+    //     if(dir == 4) opponentSliding = queenPositions | bishopPositions;
+    //     attacks = dirAttacks(this->kingPos_, opponentSliding, dir);
+    //     if(attacks != kRayMasks[this->kingPos_][dir] && !(attacks & (opponentPositions ^ opponentSliding))){ //A sliding piece is in this direction
+            
+    //         if(std::popcount(attacks & playerPositions) == 1) {//There's a pinned piece
+                
+    //         }
+    //     }
+    // }
 
     //First look in 8 directions for rooks, bishops, and queens
     for(int dir = 0; dir < 8; dir++){
@@ -627,6 +671,71 @@ void MoveGenerator::setPinnedAndForced() {
             }
         }
     }
+}
+/*void MoveGenerator::setPinnedAndForced() {
+
+    memset(this->pinnedDirs_,false, 512);
+    this->forced_ = 0;
+    this->pinned_ = 0;
+    this->hasForced_ = false;
+    this->cannotMove_ = false;
+
+    BitBoard queenPositions = this->board_->pieceList(kPieceListInd[kPieceQueen][this->opponent_]).mask();
+    BitBoard rookPositions = this->board_->pieceList(kPieceListInd[kPieceRook][this->opponent_]).mask();
+    BitBoard bishopPositions = this->board_->pieceList(kPieceListInd[kPieceBishop][this->opponent_]).mask();
+    BitBoard knightPositions = this->board_->pieceList(kPieceListInd[kPieceKnight][this->opponent_]).mask();
+    BitBoard pawnPositions = this->board_->pieceList(kPieceListInd[kPiecePawn][this->opponent_]).mask();
+    BitBoard opponentPositions = queenPositions | rookPositions | bishopPositions | knightPositions | pawnPositions | kPosMasks[this->board_->kingPos(this->opponent_)];
+    BitBoard opponentSliding = queenPositions | rookPositions;
+    BitBoard opponentOther = this->occupied_ ^ opponentOther;
+    BitBoard playerPositions = this->occupied_ ^ opponentPositions;
+
+    BitBoard attacks, potentialPinned;
+
+    for(int dir = 0; dir < 8; dir++){
+        if(dir == 4) opponentSliding = queenPositions | bishopPositions;
+        attacks = dirAttacks(this->kingPos_, opponentSliding, dir);
+        potentialPinned = attacks & playerPositions;
+        if(potentialPinned){
+            if(potentialPinned == kPosMasks[bitscan_forward(potentialPinned)]){
+                
+            }
+        }
+        if(!(attacks & (this->occupied_ ^ opponentSliding))){ //Nothing between the king and the sliding piece
+            if(!this->hasForced_){
+                this->hasForced_ = true;
+                this->forced_ = attacks;
+            } else {
+                this->cannotMove_ = true;
+                return;
+            }
+        }
+    }
+}*/
+
+vector<ChessMove> MoveGenerator::genPseudoLegalMoves() const {
+
+    vector<ChessMove> moves;
+
+    this->genKingMoves(moves);
+    this->genKnightMoves(moves);
+    this->genPawnMoves(moves);
+    this->genSlidingMoves(moves);
+
+    return moves;
+}
+vector<ChessMove> MoveGenerator::genLegalMoves(vector<ChessMove> &moves) {
+    vector<ChessMove> legalMoves;
+    ChessBoard *board = (ChessBoard*)this->board_;
+
+    for(ChessMove &move : moves){
+        board->doMove(move, false);
+        this->setAttacked();
+        if(!(kPosMasks[board->kingPos(this->player_)] & this->attacked_)) legalMoves.push_back(move);
+        board->undoMove(move, false);
+    }
+
+    return legalMoves;
 }
 
 MoveGenerator::MoveGenerator() {
@@ -749,8 +858,10 @@ void MoveGenerator::setBoard(ChessBoard &board) {
 
     //std::cout << this->kingPos_.str() << std::endl;
 
-    this->occupied_ = board_->occupied();
+    this->occupied_ = this->board_->occupied();
     reset_bit(this->occupied_, this->kingPos_);
+    this->opponentOccupied_ = this->occupied_;
+    for(PieceType type = kPiecePawn; type < kPieceKing; type++) this->opponentOccupied_ ^= this->board_->pieceList(new_piece(type, this->player_)).mask();
     this->setAttacked();
     this->setPinnedAndForced();
     //this->setPinned();

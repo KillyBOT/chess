@@ -9,7 +9,7 @@ class ChessPieceList {
     ChessPos positions_[64];
     char map_[64];
     int pieceNum_;
-    BitBoard bb_;
+    U64 bb_;
 
     public:
 
@@ -18,10 +18,10 @@ class ChessPieceList {
     inline int size() const {
         return this->pieceNum_;
     }
-    inline BitBoard mask() const {
+    inline U64 mask() const {
         return this->bb_;
     }
-    inline const ChessPos &operator[](char ind) const {
+    inline ChessPos operator[](char ind) const {
         return this->positions_[ind];
     }
 

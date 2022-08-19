@@ -24,25 +24,33 @@ extern size_t kZobristBlackToMoveNum;
 extern size_t kZobristCastlingNums[16];
 extern size_t kZobristEnPassantNums[9];
 
-const Byte kBoardDataWhiteKingside = 0b1110;
-const Byte kBoardDataWhiteQueenside = 0b1101;
-const Byte kBoardDataBlackKingside = 0b1011;
-const Byte kBoardDataBlackQueenside = 0b0111;
+const Byte kCastlingWhiteKingside = 0b0001;
+const Byte kCastlingWhiteQueenside = 0b0010;
+const Byte kCastlingBlackKingside = 0b0100;
+const Byte kCastlingBlackQueenside = 0b1000;
+ 
+const Byte kCastlingWhiteKingsideRemoveMask = 0b1110;
+const Byte kCastlingWhiteQueensideRemoveMask = 0b1101;
+const Byte kCastlingBlackKingsideRemoveMask = 0b1011;
+const Byte kCastlingBlackQueensideRemoveMask = 0b0111;
+
+const char kPieceListInd[2][7] = {0, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0110, 0, 0b1001, 0b1010, 0b1011, 0b1100, 0b1101, 0b1110};
 
 class ChessBoard {
 
     ChessPiece pieces_[64];
-    ChessPieceList pieceLists_[16];
-    BitBoard occupied_;
-
-    vector<ChessMove> moves_;
-    vector<unsigned int> boardData_;
-    vector<size_t> boardHistory_;
+    U64 occupied_[16];
+    U64 totalOccupied_;
     
     bool blackToMove_;
     ChessPos whiteKingPos_, blackKingPos_;
 
-    void addNewKey(ChessMove move);
+    size_t key_;
+    unsigned short boardData_;
+    int moveNum_;
+
+    void initKey(unsigned int data);
+    void setKey(ChessMove move);
 
     public:
 
@@ -56,32 +64,32 @@ class ChessBoard {
     inline Player opponent() const {
         return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
     }
-    inline BitBoard occupied() const {
-        return this->occupied_;
+    inline U64 occupied(ChessPiece piece) const {
+        return this->occupied_[piece];
     }
-    inline ChessPiece piece(ChessPos pos) const {
+    inline U64 occupied(PieceType type, Player player) const {
+        return this->occupied_[(player << 3) + type];
+    }
+    inline U64 totalOccupied() const {
+        return this->totalOccupied_;
+    }
+    inline const ChessPiece &piece(ChessPos pos) const {
         return this->pieces_[pos];
     }
-    inline const ChessPieceList &pieceList(ChessPiece piece) const {
-        return this->pieceLists_[piece];
-    }
     inline const size_t &key() const {
-        return this->boardHistory_.back();
-    }
-    inline const ChessMove &lastMove() const {
-        return this->moves_.back();
+        return this->key_;
     }
     inline const Byte movesSinceLastCapture() const {
-        return this->boardData_.back() >> 11;
+        return this->boardData_ >> 11;
     }
     inline ChessPos kingPos(Player player) const {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);
     }
     inline ChessPos enPassantSquare() const {
-        return (this->boardData_.back() >> 4) & 0b1111111;
+        return (this->boardData_ >> 4) & 0b1111111;
     }
     inline bool canCastle(Player player, bool kingside) const {
-        return this->boardData_.back() & (1 << (player << 1 + !kingside));
+        return this->boardData_ & (1 << (player << 1 + !kingside));
     }
 
     int turnNum() const;
@@ -98,12 +106,10 @@ class ChessBoard {
     ChessPiece removePiece(ChessPos pos);
     //WARNING: if either of the positions are invalid, it will not work!
     void movePiece(ChessPos oldPos, ChessPos newPos);
-    void resetKeys(unsigned int data);
     void fromFen(std::string fen);
 
     void doMove(ChessMove move, bool update = true);
     void undoMove(ChessMove move, bool update = true);
-    void undoLastMove();
 };
 
 void init_zobrist_nums();

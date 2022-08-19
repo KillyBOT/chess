@@ -8,14 +8,14 @@ ChessMove::ChessMove(){
     this->captured = 0;
     this->oldPos = -1;
     this->newPos = -1;
-    this->moveData = kMoveNone;
+    this->moveData = kMoveFlagNone;
 }
 ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->piece = piece;
     this->captured = 0;
     this->oldPos = oldPos;
     this->newPos = newPos;
-    this->moveData = kMoveNone;
+    this->moveData = kMoveFlagNone;
 }
 ChessMove::ChessMove(const ChessMove &move) {
     this->piece = move.piece;
@@ -27,13 +27,13 @@ ChessMove::ChessMove(const ChessMove &move) {
 
 PieceType ChessMove::promotionType() const {
     switch(this->moveData){
-        case kMovePromotingToQueen:
+        case kMoveFlagPromotingToQueen:
         return kPieceQueen;
-        case kMovePromotingToRook:
+        case kMoveFlagPromotingToRook:
         return kPieceRook;
-        case kMovePromotingToKnight:
+        case kMoveFlagPromotingToKnight:
         return kPieceKnight;
-        case kMovePromotingToBishop:
+        case kMoveFlagPromotingToBishop:
         return kPieceBishop;
     }
     return kPieceNone;
@@ -43,7 +43,7 @@ bool ChessMove::isValid() const {
 }
 std::string ChessMove::str() const {
     std::string str;
-    if(this->moveData == kMoveIsCastling){
+    if(this->moveData == kMoveFlagIsCastling){
         if(this->isCastlingKingside()) return "0-0";
         else return "0-0-0";
     }

@@ -8,14 +8,14 @@
 #include "pos.h"
 #include "piece.h"
 
-const Byte kMoveNone = 0;
-const Byte kMoveIsCastling = 1;
-const Byte kMovePromotingToQueen = 2;
-const Byte kMovePromotingToRook = 3;
-const Byte kMovePromotingToKnight = 4;
-const Byte kMovePromotingToBishop = 5;
-const Byte kMoveEnPassant = 6;
-const Byte kMoveEnPassantEligible = 7;
+const Byte kMoveFlagNone = 0;
+const Byte kMoveFlagIsCastling = 1;
+const Byte kMoveFlagPromotingToQueen = 2;
+const Byte kMoveFlagPromotingToRook = 3;
+const Byte kMoveFlagPromotingToKnight = 4;
+const Byte kMoveFlagPromotingToBishop = 5;
+const Byte kMoveFlagEnPassant = 6;
+const Byte kMoveFlagEnPassantEligible = 7;
 
 struct ChessMove {
 
@@ -33,7 +33,7 @@ struct ChessMove {
         return piece_type(this->captured) != kPieceNone;
     }
     inline bool isPromoting() const {
-        return this->moveData == kMovePromotingToQueen || this->moveData == kMovePromotingToRook || this->moveData == kMovePromotingToKnight || this->moveData == kMovePromotingToBishop;
+        return this->moveData == kMoveFlagPromotingToQueen || this->moveData == kMoveFlagPromotingToRook || this->moveData == kMoveFlagPromotingToKnight || this->moveData == kMoveFlagPromotingToBishop;
     }
 
     PieceType promotionType() const;

@@ -28,11 +28,13 @@ int move_generation_test(ChessBoard &board, int depth){
     int toAdd;
 
     for(ChessMove move : gMoveGenerator.getMoves()){
-        board.doMove(move,false);
-        toAdd = move_generation_test(board, depth-1);
-        //if(depth == 1) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
+        ChessBoard newBoard(board);
+        newBoard.doMove(move);
+        //std::cout << move.str() << std::endl;
+        //newBoard.printBoard();
+        toAdd = move_generation_test(newBoard, depth-1);
+        //if(depth == 3) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
-        board.undoMove(move,false);
     }
 
     return positionNum;
@@ -73,11 +75,11 @@ int main()
     // mg.printAttacked();
 
     ChessBoard board;
-    board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    //board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
     // board.fromFen("rnbq1k1r/pp1P1ppp/2p5/8/2B4b/8/PPP1NnPP/RNBQ1K1R w - - 0 1");
     board.printBoard();
 
-    for(int i = 1; i < 5; i++){
+    for(int i = 1; i < 6; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         int positionNum = move_generation_test(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

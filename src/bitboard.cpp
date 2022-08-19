@@ -4,22 +4,23 @@
 #include "bitboard.h"
 #include "ray.h"
 
-BitBoard kRankMasks[8];
-BitBoard kFileMasks[8];
-BitBoard kDiagMasks[64];
-BitBoard kAntiDiagMasks[64];
-BitBoard kPosMasks[64];
-BitBoard kRayMasks[64][8];
-BitBoard kKingAttackMasks[64];
-BitBoard kKnightAttackMasks[64];
-BitBoard kWhitePawnAttackMasks[64];
-BitBoard kBlackPawnAttackMasks[64];
+// U64 kRankMasks[8];
+// U64 kFileMasks[8];
+// U64 kDiagMasks[64];
+// U64 kAntiDiagMasks[64];
+U64 kPosMasks[64];
+U64 kPosResetMasks[64];
+U64 kRayMasks[64][8];
+U64 kKingAttackMasks[64];
+U64 kKnightAttackMasks[64];
+U64 kWhitePawnAttackMasks[64];
+U64 kBlackPawnAttackMasks[64];
 
-static const BitBoard kVert1 = 0x00FF00FF00FF00FF;
-static const BitBoard kVert2 = 0x0000FFFF0000FFFF;
-static const BitBoard kHor1 = 0x5555555555555555;
-static const BitBoard kHor2 = 0x3333333333333333;
-static const BitBoard kHor4 = 0x0f0f0f0f0f0f0f0f;
+static const U64 kVert1 = 0x00FF00FF00FF00FF;
+static const U64 kVert2 = 0x0000FFFF0000FFFF;
+static const U64 kHor1 = 0x5555555555555555;
+static const U64 kHor2 = 0x3333333333333333;
+static const U64 kHor4 = 0x0f0f0f0f0f0f0f0f;
 
 //This is the Walter Faxon magic bitscan, taken directly from the chess programming wiki
 static const char kLSBTable[154] =
@@ -47,7 +48,7 @@ static const char kMSBTable[64] = {
    13, 18,  8, 12,  7,  6,  5, 63
 };
 
-void print_bitboard(BitBoard board){
+void print_bitboard(U64 board){
     for(int rank = 7; rank >= 0; rank--){
         for(int file = 0; file < 8; file++){
             std::cout << (bit(board, rank * 8 + file) ? "1 " : ". ");
@@ -56,61 +57,33 @@ void print_bitboard(BitBoard board){
     }
 }
 
-BitBoard flip_vertical(BitBoard board){
-    //print_bitboard(board);
-    //std::cout << std::endl;
-    return __bswap_64(board);
-    // board = ((board >>  8) & kVert1) | ((board & kVert1) <<  8);
-    // board = ((board >> 16) & kVert2) | ((board & kVert2) << 16);
-    // board = ( board >> 32) | ( board << 32);
-    // //print_bitboard(board);
-    // //std::cout << std::endl << std::endl;
-    // return board;
-}
-BitBoard flip_horizontal (BitBoard board) {
-   board = ((board >> 1) & kHor1) +  2*(board & kHor1);
-   board = ((board >> 2) & kHor2) +  4*(board & kHor2);
-   board = ((board >> 4) & kHor4) + 16*(board & kHor4);
-   return board;
-}
-int bitscan_forward(BitBoard board){
-    //return __builtin_ffsll(board);
-    unsigned int tmp;
-    board  ^= board - 1;
-    board  = (int)board ^ (int)(board >> 32);
-    board ^= 0x01C5FC81;
-    board +=  board >> 16;
-    board -= (board >> 8) + 51;
-    return kLSBTable [board & 255]; // 0..63
-}
-int bitscan_reverse(BitBoard board) {
-   const BitBoard debruijn64 = 0x03f79d71b4cb0a89;
-   board |= board >> 1; 
-   board |= board >> 2;
-   board |= board >> 4;
-   board |= board >> 8;
-   board |= board >> 16;
-   board |= board >> 32;
-   return kMSBTable[(board * debruijn64) >> 58];
+inline U64 flip_horizontal (U64 bb) {
+   bb = ((bb >> 1) & kHor1) +  2*(bb & kHor1);
+   bb = ((bb >> 2) & kHor2) +  4*(bb & kHor2);
+   bb = ((bb >> 4) & kHor4) + 16*(bb & kHor4);
+   return bb;
 }
 
 //TODO: write all of these into a txt file and just load them that way
 void init_masks() {
-    for(int i = 0; i < 64; i++) kPosMasks[i] = kOne << i;
+    for(int i = 0; i < 64; i++) {
+        kPosMasks[i] = kOne << i;
+        kPosResetMasks[i] = ~kPosMasks[i];
+    }
 
-    kRankMasks[0] = (BitBoard)0b11111111;
-    for(int i = 1; i < 8; i++) kRankMasks[i] = kRankMasks[i-1] << 8;
+    // kRankMasks[0] = (U64)0b11111111;
+    // for(int i = 1; i < 8; i++) kRankMasks[i] = kRankMasks[i-1] << 8;
 
-    kFileMasks[0] = (BitBoard)0b0000000100000001000000010000000100000001000000010000000100000001;
-    for(int i = 1; i < 8; i++) kFileMasks[i] = kFileMasks[i-1] << 1;
+    // kFileMasks[0] = (U64)0b0000000100000001000000010000000100000001000000010000000100000001;
+    // for(int i = 1; i < 8; i++) kFileMasks[i] = kFileMasks[i-1] << 1;
 
     for(ChessPos start = 0; start < 64; start++){
-        set_bit(kDiagMasks[start],start);
-        set_bit(kAntiDiagMasks[start],start);
-        for(int i = 0; i < kRaySizes[start][kRayDirNE]; i++) set_bit(kDiagMasks[start],kRays[start][kRayDirNE][i]);
-        for(int i = 0; i < kRaySizes[start][kRayDirSW]; i++) set_bit(kDiagMasks[start],kRays[start][kRayDirSW][i]);
-        for(int i = 0; i < kRaySizes[start][kRayDirNW]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirNW][i]);
-        for(int i = 0; i < kRaySizes[start][kRayDirSE]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirSE][i]);
+        // set_bit(kDiagMasks[start],start);
+        // set_bit(kAntiDiagMasks[start],start);
+        // for(int i = 0; i < kRaySizes[start][kRayDirNE]; i++) set_bit(kDiagMasks[start],kRays[start][kRayDirNE][i]);
+        // for(int i = 0; i < kRaySizes[start][kRayDirSW]; i++) set_bit(kDiagMasks[start],kRays[start][kRayDirSW][i]);
+        // for(int i = 0; i < kRaySizes[start][kRayDirNW]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirNW][i]);
+        // for(int i = 0; i < kRaySizes[start][kRayDirSE]; i++) set_bit(kAntiDiagMasks[start],kRays[start][kRayDirSE][i]);
 
         for(int dir = 0; dir < 8; dir++) {
             if(kRaySizes[start][dir]) set_bit(kKingAttackMasks[start],kRays[start][dir][0]);

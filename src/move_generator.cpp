@@ -27,7 +27,7 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
     return false;
 }
 
-U64 MoveGenerator::dirAttacks(ChessPos start, int dir, U64 occupied) const {
+/*U64 MoveGenerator::dirAttacks(ChessPos start, int dir, U64 occupied) const {
     int first;
     switch(dir){
         case kRayDirN:
@@ -42,8 +42,7 @@ U64 MoveGenerator::dirAttacks(ChessPos start, int dir, U64 occupied) const {
     }
     if(first < 0) return kRayMasks[start][dir];
     else return kRayMasks[start][dir] & ~kRayMasks[first][dir];
-}
-
+}*/
 /*void MoveGenerator::setAttacked(const ChessBoard *board) {
     this->attacked_ = 0;
     reset_bit(this->occupied_, this->kingPos_);
@@ -107,20 +106,20 @@ void MoveGenerator::genSlidingAttacks(const ChessBoard *board) {
     while(rooks){
 
         start = bitscan_forward_iter(rooks);
-        for(int dir = 0; dir < 4; dir++) this->attacked_ |= this->dirAttacks(start, dir);
+        for(int dir = 0; dir < 4; dir++) this->attacked_ |= this->dir_attacks(start, dir);
     }
 
     while(bishops){
 
         start = bitscan_forward_iter(bishops);
-        for(int dir = 4; dir < 8; dir++) this->attacked_ |= this->dirAttacks(start, dir);
+        for(int dir = 4; dir < 8; dir++) this->attacked_ |= this->dir_attacks(start, dir);
 
     }
 
     while(queens){
 
         start = bitscan_forward_iter(queens);
-        for(int dir = 0; dir < 8; dir++) this->attacked_ |= this->dirAttacks(start, dir);
+        for(int dir = 0; dir < 8; dir++) this->attacked_ |= this->dir_attacks(start, dir);
     }
 }
 */
@@ -429,15 +428,18 @@ bool MoveGenerator::inCheck() const {
     if(kKnightAttackMasks[this->kingPos_] & this->board_->occupied[kPieceListInd[this->opponent_][kPieceKnight]]) return true;
 
     //Then check for rooks and queens
-    for(int dir = 0; dir < 4; dir++){
-        mask = this->dirAttacks(this->kingPos_, dir, this->occupied_);
-        if(mask & rooksAndQueens) return true;
-    }
-    //Finally, check for bishops and queens
-    for(int dir = 4; dir < 8; dir++){
-        mask = this->dirAttacks(this->kingPos_, dir, this->occupied_);
-        if(mask & bishopsAndQueens) return true;
-    }
+    // for(int dir = 0; dir < 4; dir++){
+    //     //mask = dir_attacks(this->kingPos_, dir, this->occupied_);
+    //     if(mask & rooksAndQueens) return true;
+    // }
+    // //Finally, check for bishops and queens
+    // for(int dir = 4; dir < 8; dir++){
+    //     //mask = dir_attacks(this->kingPos_, dir, this->occupied_);
+    //     if(mask & bishopsAndQueens) return true;
+    // }
+
+    if(rookAttacks(this->kingPos_, this->board_->totalOccupied) & rooksAndQueens) return true;
+    if(bishopAttacks(this->kingPos_, this->board_->totalOccupied) & bishopsAndQueens) return true;
 
     return false;
 }
@@ -461,16 +463,19 @@ bool MoveGenerator::inCheck(ChessBoard &board, Player player) const {
     //Then check for knights
     if(kKnightAttackMasks[kingPos] & board.occupied[kPieceListInd[opponent][kPieceKnight]]) return true;
 
-    //Then check for rooks and queens
-    for(int dir = 0; dir < 4; dir++){
-        mask = this->dirAttacks(kingPos, dir, occupied);
-        if(mask & rooksAndQueens) return true;
-    }
-    //Finally, check for bishops and queens
-    for(int dir = 4; dir < 8; dir++){
-        mask = this->dirAttacks(kingPos, dir, occupied);
-        if(mask & bishopsAndQueens) return true;
-    }
+    // //Then check for rooks and queens
+    // for(int dir = 0; dir < 4; dir++){
+    //     mask = dir_attacks(kingPos, dir, occupied);
+    //     if(mask & rooksAndQueens) return true;
+    // }
+    // //Finally, check for bishops and queens
+    // for(int dir = 4; dir < 8; dir++){
+    //     mask = dir_attacks(kingPos, dir, occupied);
+    //     if(mask & bishopsAndQueens) return true;
+    // }
+
+    if(rookAttacks(kingPos, occupied) & rooksAndQueens) return true;
+    if(bishopAttacks(kingPos, occupied) & bishopsAndQueens) return true;
 
     return false;
 }

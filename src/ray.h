@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "pos.h"
-#include "bitboard.h"
 
 const char kRayDirN = 0;
 const char kRayDirW = 1;

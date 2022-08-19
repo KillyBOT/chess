@@ -39,8 +39,6 @@ const char kPieceListInd[2][7] = {0, 0b0001, 0b0010, 0b0011, 0b0100, 0b0101, 0b0
 class ChessBoard {
 
     ChessPiece pieces_[64];
-    U64 occupied_[16];
-    U64 totalOccupied_;
     
     bool blackToMove_;
     ChessPos whiteKingPos_, blackKingPos_;
@@ -54,6 +52,9 @@ class ChessBoard {
 
     public:
 
+    U64 occupied[16];
+    U64 totalOccupied;
+
     ChessBoard(bool initBoard = true);
     ChessBoard(std::string fenStr);
     ChessBoard(const ChessBoard &board);
@@ -63,15 +64,6 @@ class ChessBoard {
     }
     inline Player opponent() const {
         return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
-    }
-    inline U64 occupied(ChessPiece piece) const {
-        return this->occupied_[piece];
-    }
-    inline U64 occupied(PieceType type, Player player) const {
-        return this->occupied_[(player << 3) + type];
-    }
-    inline U64 totalOccupied() const {
-        return this->totalOccupied_;
     }
     inline const ChessPiece &piece(ChessPos pos) const {
         return this->pieces_[pos];

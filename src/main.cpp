@@ -14,7 +14,7 @@
 #include "mcts.h"
 #include "minimax.h"
 
-int move_generation_test(ChessBoard &board, int depth){
+int perft(ChessBoard &board, int depth){
 
     //board.printBoard();
     //board.printPieces();
@@ -32,7 +32,7 @@ int move_generation_test(ChessBoard &board, int depth){
         newBoard.doMove(move);
         //std::cout << move.str() << std::endl;
         //newBoard.printBoard();
-        toAdd = move_generation_test(newBoard, depth-1);
+        toAdd = perft(newBoard, depth-1);
         //if(depth == 1) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
     }
@@ -75,13 +75,13 @@ int main()
     // mg.printAttacked();
 
     ChessBoard board;
-    board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-    // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/2Pn4/PP2N1PP/RNBQK2R w KQ - 0 1");
+    // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    // board.fromFen("rnRq1k1r/pp2bppp/2p5/8/2B5/2P5/PP2NnPP/RNBQK2R b KQ - 0 1");
     board.printBoard();
 
-    for(int i = 1; i < 5; i++){
+    for(int i = 1; i < 7; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-        int positionNum = move_generation_test(board, i);
+        int positionNum = perft(board, i);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         cout << i << '\t' << positionNum << '\t' << endTime - startTime << endl;
     }

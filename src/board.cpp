@@ -19,7 +19,7 @@ void init_zobrist_nums() {
     srand(43252003); //The first 8 digits of the number of possible rubik's cube configurations
 
     for(int pos = 0; pos < 64; pos++){
-        for(int player = 0; player < 12; player++){
+        for(int player = 0; player < 12; player+=6){
             kZobristPieceNums[pos][player] = 0;
             kZobristPieceNums[pos][player + kPieceKing + 1] = 0;
             for(int type = kPiecePawn; type <= kPieceKing; type++){
@@ -41,8 +41,8 @@ ChessBoard::ChessBoard(bool initBoard){
     this->moveNum_ = 0;
 
     memset(this->pieces_, 0, 64 * sizeof(ChessPiece));
-    memset(this->occupied_, 0 , 16 * sizeof(U64));
-    this->totalOccupied_ = 0;
+    memset(this->occupied, 0 , 16 * sizeof(U64));
+    this->totalOccupied = 0;
 
     if(initBoard){
         this->fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
@@ -58,16 +58,16 @@ ChessBoard::ChessBoard(std::string fen){
     this->moveNum_ = 0;
 
     memset(this->pieces_, 0, 64 * sizeof(ChessPiece));
-    memset(this->occupied_, 0 , 16 * sizeof(U64));
-    this->totalOccupied_ = 0;
+    memset(this->occupied, 0 , 16 * sizeof(U64));
+    this->totalOccupied = 0;
 
     this->fromFen(fen);
 }
 ChessBoard::ChessBoard(const ChessBoard &board) {
 
     memcpy(this->pieces_, board.pieces_, 64 * sizeof(ChessPiece));
-    memcpy(this->occupied_, board.occupied_, 16 * sizeof(U64));
-    this->totalOccupied_ = board.totalOccupied_;
+    memcpy(this->occupied, board.occupied, 16 * sizeof(U64));
+    this->totalOccupied = board.totalOccupied;
 
     this->boardData_ = board.boardData_;
     this->key_ = board.key_;
@@ -82,8 +82,8 @@ ChessBoard::ChessBoard(const ChessBoard &board) {
 void ChessBoard::fromFen(std::string fen) {
 
     memset(this->pieces_, 0, 64 * sizeof(ChessPiece));
-    memset(this->occupied_, 0, 16*sizeof(U64));
-    this->totalOccupied_ = 0;
+    memset(this->occupied, 0, 16*sizeof(U64));
+    this->totalOccupied = 0;
 
     using std::string;
 
@@ -417,8 +417,8 @@ void ChessBoard::addPiece(ChessPos pos, ChessPiece piece) {
         else this->blackKingPos_ = pos;
         //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
     }
-    set_bit(this->occupied_[piece], pos);
-    set_bit(this->totalOccupied_, pos);
+    set_bit(this->occupied[piece], pos);
+    set_bit(this->totalOccupied, pos);
     this->pieces_[pos] = piece;
 }
 //WARNING: if it's an invalid position, it will break!
@@ -436,8 +436,8 @@ ChessPiece ChessBoard::removePiece(ChessPos pos) {
     if(this->whiteKingPos_ == pos) this->whiteKingPos_ = -1;
     else if(this->blackKingPos_ == pos) this->blackKingPos_ = -1;
     
-    reset_bit(this->occupied_[removed], pos);
-    reset_bit(this->totalOccupied_, pos);
+    reset_bit(this->occupied[removed], pos);
+    reset_bit(this->totalOccupied, pos);
     
     //std::cout << this->whiteKingPos_.str() << '\t' << this->blackKingPos_.str() << std::endl;
 
@@ -458,11 +458,11 @@ void ChessBoard::movePiece(ChessPos oldPos, ChessPos newPos) {
     this->pieces_[newPos] = this->pieces_[oldPos];
     this->pieces_[oldPos] = 0;
 
-    reset_bit(this->occupied_[this->pieces_[newPos]], oldPos);
-    set_bit(this->occupied_[this->pieces_[newPos]], newPos);
+    reset_bit(this->occupied[this->pieces_[newPos]], oldPos);
+    set_bit(this->occupied[this->pieces_[newPos]], newPos);
 
-    reset_bit(this->totalOccupied_, oldPos);
-    set_bit(this->totalOccupied_, newPos);
+    reset_bit(this->totalOccupied, oldPos);
+    set_bit(this->totalOccupied, newPos);
 }
 
 void ChessBoard::doMove(ChessMove move, bool update) {

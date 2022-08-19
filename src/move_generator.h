@@ -33,7 +33,7 @@ class MoveGenerator {
     bool willMoveCapture(ChessMove &move) const;
     bool enPassantCheck(ChessMove &move) const;
     
-    U64 dirAttacks(ChessPos start, int dir) const;
+    U64 dirAttacks(ChessPos start, int dir, U64 occupied) const;
 
     void setAttacked(const ChessBoard *board);
     void genPawnAttacks(const ChessBoard *board);
@@ -68,7 +68,7 @@ class MoveGenerator {
     bool stalemate(ChessBoard &board);
 
     bool inCheck() const;
-    bool inCheck(ChessBoard &board);
+    bool inCheck(ChessBoard &board, Player player) const;
 
     bool hasLost();
     bool hasLost(ChessBoard &board);

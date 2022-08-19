@@ -22,6 +22,10 @@ namespace chess_defs{
     const PieceType kPieceKing = 6;
 
     const std::array<int, 7> kPieceValue = {0, 100, 500, 300, 320, 900, 0};
+
+    inline Player player_opponent(Player player){
+        return player == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
+    }
 }
 
 #endif

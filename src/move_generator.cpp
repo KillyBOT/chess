@@ -27,24 +27,24 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
     return false;
 }
 
-U64 MoveGenerator::dirAttacks(ChessPos start, int dir) const {
+U64 MoveGenerator::dirAttacks(ChessPos start, int dir, U64 occupied) const {
     int first;
     switch(dir){
         case kRayDirN:
         case kRayDirE:
         case kRayDirNE:
         case kRayDirNW:
-        first = bitscan_forward(this->occupied_ & kRayMasks[start][dir]);
+        first = bitscan_forward(occupied & kRayMasks[start][dir]);
         break;
         default:
-        first = bitscan_reverse(this->occupied_ & kRayMasks[start][dir]);
+        first = bitscan_reverse(occupied & kRayMasks[start][dir]);
         break;
     }
     if(first < 0) return kRayMasks[start][dir];
     else return kRayMasks[start][dir] & ~kRayMasks[first][dir];
 }
 
-void MoveGenerator::setAttacked(const ChessBoard *board) {
+/*void MoveGenerator::setAttacked(const ChessBoard *board) {
     this->attacked_ = 0;
     reset_bit(this->occupied_, this->kingPos_);
     this->genPawnAttacks(board);
@@ -56,7 +56,7 @@ void MoveGenerator::setAttacked(const ChessBoard *board) {
 void MoveGenerator::genPawnAttacks(const ChessBoard *board) {
     // char dirL, dirR;
 
-    U64 pawns = board->occupied(kPiecePawn, this->opponent_);
+    U64 pawns = board->occupied[kPiecePawn, this->opponent_);
     ChessPos start;
     // if(this->opponent_ == kPlayerWhite){
     //     dirL = kRayDirNW;
@@ -123,7 +123,7 @@ void MoveGenerator::genSlidingAttacks(const ChessBoard *board) {
         for(int dir = 0; dir < 8; dir++) this->attacked_ |= this->dirAttacks(start, dir);
     }
 }
-
+*/
 void MoveGenerator::genPseudoLegalMoves(vector<ChessMove> &moves) const {
     this->genKingMoves(moves);
     this->genPawnMoves(moves);
@@ -132,14 +132,15 @@ void MoveGenerator::genPseudoLegalMoves(vector<ChessMove> &moves) const {
 }
 void MoveGenerator::genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves) {
     ChessBoard board(*this->board_);
+    //for(ChessMove move : moves) std::cout << move.str() << std::endl;
     for(ChessMove &move : moves){
         board.doMove(move, false);
         //std::cout << move.str() << std::endl;
         //newBoard.printBoard();
-        this->occupied_ = board.totalOccupied();
-        this->kingPos_ = board.kingPos(this->player_);
-        this->setAttacked(&board);
-        if(!this->inCheck()) legalMoves.push_back(move);
+        //this->occupied_ = board.totalOccupied;
+        //this->kingPos_ = board.kingPos(this->player_);
+        //this->setAttacked(&board);
+        if(!this->inCheck(board,this->player_)) legalMoves.push_back(move);
         board.undoMove(move, false);
     }
 }
@@ -192,7 +193,7 @@ void MoveGenerator::genKingMoves(vector<ChessMove> &moves) const {
 }
 void MoveGenerator::genKnightMoves(vector<ChessMove> &moves) const {
 
-    U64 knights = this->board_->occupied(kPieceKnight, this->player_);
+    U64 knights = this->board_->occupied[kPieceListInd[this->player_][kPieceKnight]];
     ChessPos start;
 
     while(knights){
@@ -229,7 +230,7 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
         startRank = 6;
     }
 
-    U64 pawns = this->board_->occupied(kPiecePawn, this->player_);
+    U64 pawns = this->board_->occupied[kPieceListInd[this->player_][kPiecePawn]];
 
     while(pawns){
         start = bitscan_forward_iter(pawns);
@@ -313,9 +314,9 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
 
 }
 void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
-    U64 rooks = this->board_->occupied(kPieceRook, this->player_);
-    U64 bishops = this->board_->occupied(kPieceBishop, this->player_);
-    U64 queens = this->board_->occupied(kPieceQueen, this->player_);
+    U64 rooks = this->board_->occupied[kPieceListInd[this->player_][kPieceRook]];
+    U64 bishops = this->board_->occupied[kPieceListInd[this->player_][kPieceBishop]];
+    U64 queens = this->board_->occupied[kPieceListInd[this->player_][kPieceQueen]];
 
     bool isPinned;
     int posInDir;
@@ -410,11 +411,68 @@ bool MoveGenerator::stalemate(ChessBoard &board){
 }
 
 bool MoveGenerator::inCheck() const {
-    return kPosMasks[this->kingPos_] & this->attacked_;
+    //return kPosMasks[this->kingPos_] & this->attacked_;
+    U64 mask;
+    U64 rooksAndQueens = this->board_->occupied[kPieceListInd[this->opponent_][kPieceRook]] | this->board_->occupied[kPieceListInd[this->opponent_][kPieceQueen]];
+    U64 bishopsAndQueens = this->board_->occupied[kPieceListInd[this->opponent_][kPieceBishop]] | this->board_->occupied[kPieceListInd[this->opponent_][kPieceQueen]];
+
+    //First check for pawns
+    if(this->player_ == kPlayerWhite) mask = kWhitePawnAttackMasks[this->kingPos_];
+    else mask = kBlackPawnAttackMasks[this->kingPos_];
+
+    if(mask & this->board_->occupied[kPieceListInd[this->opponent_][kPiecePawn]]) return true;
+
+    //Then check for kings
+    if(kKingAttackMasks[this->kingPos_] & this->board_->occupied[kPieceListInd[this->opponent_][kPieceKing]]) return true;
+
+    //Then check for knights
+    if(kKnightAttackMasks[this->kingPos_] & this->board_->occupied[kPieceListInd[this->opponent_][kPieceKnight]]) return true;
+
+    //Then check for rooks and queens
+    for(int dir = 0; dir < 4; dir++){
+        mask = this->dirAttacks(this->kingPos_, dir, this->occupied_);
+        if(mask & rooksAndQueens) return true;
+    }
+    //Finally, check for bishops and queens
+    for(int dir = 4; dir < 8; dir++){
+        mask = this->dirAttacks(this->kingPos_, dir, this->occupied_);
+        if(mask & bishopsAndQueens) return true;
+    }
+
+    return false;
 }
-bool MoveGenerator::inCheck(ChessBoard &board) {
-    this->setBoard(board);
-    return this->inCheck();
+bool MoveGenerator::inCheck(ChessBoard &board, Player player) const {
+    U64 mask;
+    Player opponent = player_opponent(player);
+    ChessPos kingPos = board.kingPos(player);
+    U64 occupied = board.totalOccupied;
+    U64 rooksAndQueens = board.occupied[kPieceListInd[opponent][kPieceRook]] | board.occupied[kPieceListInd[opponent][kPieceQueen]];
+    U64 bishopsAndQueens = board.occupied[kPieceListInd[opponent][kPieceBishop]] | board.occupied[kPieceListInd[opponent][kPieceQueen]];
+
+    //First check for pawns
+    if(player == kPlayerWhite) mask = kWhitePawnAttackMasks[kingPos];
+    else mask = kBlackPawnAttackMasks[kingPos];
+
+    if(mask & board.occupied[kPieceListInd[opponent][kPiecePawn]]) return true;
+
+    //Then check for kings
+    if(kKingAttackMasks[kingPos] & board.occupied[kPieceListInd[opponent][kPieceKing]]) return true;
+
+    //Then check for knights
+    if(kKnightAttackMasks[kingPos] & board.occupied[kPieceListInd[opponent][kPieceKnight]]) return true;
+
+    //Then check for rooks and queens
+    for(int dir = 0; dir < 4; dir++){
+        mask = this->dirAttacks(kingPos, dir, occupied);
+        if(mask & rooksAndQueens) return true;
+    }
+    //Finally, check for bishops and queens
+    for(int dir = 4; dir < 8; dir++){
+        mask = this->dirAttacks(kingPos, dir, occupied);
+        if(mask & bishopsAndQueens) return true;
+    }
+
+    return false;
 }
 
 bool MoveGenerator::hasLost() {
@@ -446,12 +504,12 @@ void MoveGenerator::setBoard(ChessBoard &board) {
     this->playerOccupied_ = 0;
     this->opponentOccupied_ = 0;
     for(PieceType type = kPiecePawn; type <= kPieceKing; type++){
-        this->playerOccupied_ |= board.occupied(type, this->player_);
-        this->opponentOccupied_ |= board.occupied(type, this->opponent_);
+        this->playerOccupied_ |= board.occupied[kPieceListInd[this->player_][type]];
+        this->opponentOccupied_ |= board.occupied[kPieceListInd[this->opponent_][type]];
     }
     
-    this->occupied_ = this->board_->totalOccupied();
-    this->setAttacked(this->board_);
+    this->occupied_ = this->board_->totalOccupied;
+    //this->setAttacked(this->board_);
 }
 void MoveGenerator::printAttacked() const {
 

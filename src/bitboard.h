@@ -4,6 +4,7 @@
 using U64 = unsigned long long;
 
 const U64 kOne = 1;
+const U64 kZero = 0;
 // extern U64 kRankMasks[8];
 // extern U64 kFileMasks[8];
 // extern U64 kDiagMasks[64];
@@ -29,12 +30,11 @@ inline void reset_bit(U64 &bb, int ind) {
 U64 flip_horizontal(U64 bb);
 
 inline U64 flip_vertical(U64 bb){
-
     return __bswap_64(bb);
 }
 inline int bitscan_forward(U64 bb){
-    if(bb == 0) return -1;
-    else return __builtin_ffsll(bb) - 1;
+    if(bb == kZero) return -1;
+    return __builtin_ffsll(bb) - 1;
     // unsigned int tmp;
     // bb  ^= bb - 1;
     // bb  = (int)bb ^ (int)(bb >> 32);
@@ -44,13 +44,13 @@ inline int bitscan_forward(U64 bb){
     // return kLSBTable [bb & 255]; // 0..63
 }
 inline int bitscan_forward_iter(U64 &bb){
-    int ind = bitscan_forward(bb);
-    if(ind != -1) reset_bit(bb, ind);
+    int ind = __builtin_ffsll(bb) - 1;
+    bb &= bb - 1;
     return ind;
 }
 inline int bitscan_reverse(U64 bb) {
-    if(bb == 0) return -1;
-    else return 63 - __builtin_clzll(bb);
+    if(bb == kZero) return -1;
+    return 63 - __builtin_clzll(bb);
     // const U64 debruijn64 = 0x03f79d71b4cb0a89;
     // bb |= bb >> 1; 
     // bb |= bb >> 2;

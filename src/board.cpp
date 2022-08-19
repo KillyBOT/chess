@@ -81,6 +81,7 @@ ChessBoard::ChessBoard(const ChessBoard &board) {
 
 void ChessBoard::fromFen(std::string fen) {
 
+    memset(this->pieces_, 0, 64 * sizeof(ChessPiece));
     memset(this->occupied_, 0, 16*sizeof(U64));
     this->totalOccupied_ = 0;
 

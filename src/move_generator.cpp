@@ -19,6 +19,7 @@ bool MoveGenerator::willMoveCapture(ChessMove &move) const {
 }
 bool MoveGenerator::enPassantCheck(ChessMove &move) const {
     if(move.newPos == this->enPassantSquare_){
+        move.moveData = kMoveFlagEnPassant;
         if(this->player_ == kPlayerWhite) move.captured = this->board_->piece(move.newPos - 8);
         else move.captured = this->board_->piece(move.newPos + 8);
         return true;
@@ -158,7 +159,7 @@ void MoveGenerator::genKingMoves(vector<ChessMove> &moves) const {
     }
 
     //Then check if you can castle
-    if(((this->player_ == kPlayerWhite && this->kingPos_ == new_pos("e1")) || (this->player_ == kPlayerBlack && this->kingPos_ == new_pos("e8"))) && !this->inCheck()){
+    if(!this->inCheck() && ((this->player_ == kPlayerWhite && this->kingPos_ == new_pos("e1")) || (this->player_ == kPlayerBlack && this->kingPos_ == new_pos("e8"))) && !this->inCheck()){
         move.moveData = kMoveFlagIsCastling;
         //Queenside
         if(
@@ -197,8 +198,6 @@ void MoveGenerator::genKnightMoves(vector<ChessMove> &moves) const {
     while(knights){
         start = bitscan_forward_iter(knights);
         ChessMove move = ChessMove(this->board_->piece(start), start, start);
-
-        //If a knight is pinned, it cannot move
 
         for(int j = 0; j < kKnightPositionTableSize[start]; j++){
             move.newPos = kKnightPositionTable[start][j];
@@ -452,6 +451,7 @@ void MoveGenerator::setBoard(ChessBoard &board) {
     }
     
     this->occupied_ = this->board_->totalOccupied();
+    this->setAttacked(this->board_);
 }
 void MoveGenerator::printAttacked() const {
 

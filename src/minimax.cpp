@@ -146,17 +146,17 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
 }
 
 //Does everything the basic heuristic search does, but also uses attacked squares, number of pinned pieces, and a position evaluation in the calculation
-/*int heuristic_complex(ChessBoard &board, Player maxPlayer){
+int heuristic_complex(ChessBoard &board, Player maxPlayer){
     gMoveGenerator.setBoard(board);
     Player opponent = (maxPlayer == kPlayerWhite) ? kPlayerBlack : kPlayerWhite;
     int score = 0;
 
     if(gMoveGenerator.hasLost()) score -= kLossPenalty;
-    else if(gMoveGenerator.inCheck()) score -= kCheckPenalty;
-
-    if(board.player() != maxPlayer) score *= -1;
+    else if(board.inCheck(maxPlayer)) score -= kCheckPenalty;
     
     score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
+
+    if(board.player() == opponent) score *= -1;
 
     //score -= gMoveGenerator.attacked().size() * kAttackedCoefficient;
     //score -= gMoveGenerator.pinned().size() * kPinnedCoefficient;
@@ -173,50 +173,57 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
     //gMoveGenerator.setBoard(board);
 
     int positionScore = 0;
-    int intPos;
+    int pos;
+    U64 occupied = board.totalOccupied;
+    ChessPiece piece;
 
-    for(int i = 0; i < board.pieceNum(); i++){
-        intPos = board.piecePositions()[i].pos;
-        if(board.piece(board.piecePositions()[i]) == kPlayerWhite){
-            switch(board.piece(board.piecePositions()[i]).type()){
+    while(occupied){
+        pos = bitscan_forward_iter(occupied);
+        piece = board.piece(pos);
+        if(piece_player(piece) == kPlayerWhite){
+            switch(piece_type(piece)){
                 case kPiecePawn:
-                positionScore += kPawnTableWhite[intPos];
+                positionScore += kPawnTableWhite[pos];
                 break;
                 case kPieceKnight:
-                positionScore += kKnightTable[intPos];
+                positionScore += kKnightTable[pos];
                 break;
                 case kPieceBishop:
-                positionScore += kBishopTableWhite[intPos];
+                positionScore += kBishopTableWhite[pos];
                 break;
                 case kPieceRook:
-                positionScore += kRookTableWhite[intPos];
+                positionScore += kRookTableWhite[pos];
                 break;
                 case kPieceQueen:
-                positionScore += kQueenTableWhite[intPos];
+                positionScore += kQueenTableWhite[pos];
                 break;
                 case kPieceKing:
-                positionScore += kKingTableWhite[intPos];
+                positionScore += kKingTableWhite[pos];
+                break;
+                default:
                 break;
             }
         } else {
-            switch(board.piece(board.piecePositions()[i]).type()){
+            switch(piece_type(piece)){
                 case kPiecePawn:
-                positionScore -= kPawnTableBlack[intPos];
+                positionScore -= kPawnTableBlack[pos];
                 break;
                 case kPieceKnight:
-                positionScore -= kKnightTable[intPos];
+                positionScore -= kKnightTable[pos];
                 break;
                 case kPieceBishop:
-                positionScore -= kBishopTableBlack[intPos];
+                positionScore -= kBishopTableBlack[pos];
                 break;
                 case kPieceRook:
-                positionScore -= kRookTableBlack[intPos];
+                positionScore -= kRookTableBlack[pos];
                 break;
                 case kPieceQueen:
-                positionScore -= kQueenTableBlack[intPos];
+                positionScore -= kQueenTableBlack[pos];
                 break;
                 case kPieceKing:
-                positionScore -= kKingTableBlack[intPos];
+                positionScore -= kKingTableBlack[pos];
+                break;
+                default:
                 break;
             }
         }
@@ -225,7 +232,7 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
     score += (maxPlayer == kPlayerWhite ? positionScore : -positionScore) * kPositionCoefficient;
 
     return score;
-}*/
+}
 
 TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
     this->val = val;
@@ -233,7 +240,7 @@ TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
 }
 
 int Minimax::evalBoard(ChessBoard &board){
-    return this->heuristicFunc_(board, this->maxPlayer_);
+    //return this->heuristicFunc_(board, this->maxPlayer_);
     if(!this->boardScores_.count(board.key())) {
         int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
         this->boardScores_.emplace(board.key(), this->heuristicFunc_(board, this->maxPlayer_));

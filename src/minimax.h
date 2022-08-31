@@ -39,7 +39,7 @@ class Minimax : public ChessAI{
 
     public:
     
-    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_basic, int depth = 5, bool doABPruning = true, bool doQuiescence = true);
+    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_complex, int depth = 5, bool doABPruning = true, bool doQuiescence = true);
     ChessMove findOptimalMove(ChessBoard &board);
 
     bool setABPruning();

@@ -21,7 +21,7 @@ class MoveGenerator {
     // bool hasForced_, cannotMove_;
     // bool doEnPassantCheck_;
 
-    U64 occupied_, playerOccupied_, opponentOccupied_;
+    U64 occupied_, opponentOccupied_, validPositions_;
     U64 attacked_;
     // U64 pinned_;
     // bool pinnedDirs_[64][8];

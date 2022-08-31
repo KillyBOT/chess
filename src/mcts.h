@@ -23,15 +23,15 @@ struct MCTSNode{
 };
 class MCTS : public ChessAI{
     unordered_map<size_t, MCTSNode> nodes_;
-    int times_;
+    int times_, rolloutTimes_;
 
     void select(ChessBoard &root);
     size_t expand(ChessBoard &leaf);
-    Player simulate(ChessBoard &leaf);
-    void backpropogate(size_t key, Player win);
+    int simulate(ChessBoard &leaf);
+    void backpropogate(size_t key, int reward, Player player);
 
     public:
-    MCTS(int times = 100);
+    MCTS(int times = 100, int rolloutTimes = 100);
     ChessMove findOptimalMove(ChessBoard &board);
 };
 

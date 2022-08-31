@@ -15,7 +15,6 @@ using std::string;
 class ChessAI {
     string name_;
     unordered_map<size_t, vector<ChessMove>> moveMap_;
-    MoveGenerator mg_;
 
     public:
 

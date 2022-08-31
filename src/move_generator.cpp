@@ -22,107 +22,12 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
         move.moveData = kMoveFlagEnPassant;
         if(this->player_ == kPlayerWhite) move.captured = this->board_->piece(move.newPos - 8);
         else move.captured = this->board_->piece(move.newPos + 8);
+
         return true;
     }
     return false;
 }
 
-/*U64 MoveGenerator::dirAttacks(ChessPos start, int dir, U64 occupied) const {
-    int first;
-    switch(dir){
-        case kRayDirN:
-        case kRayDirE:
-        case kRayDirNE:
-        case kRayDirNW:
-        first = bitscan_forward(occupied & kRayMasks[start][dir]);
-        break;
-        default:
-        first = bitscan_reverse(occupied & kRayMasks[start][dir]);
-        break;
-    }
-    if(first < 0) return kRayMasks[start][dir];
-    else return kRayMasks[start][dir] & ~kRayMasks[first][dir];
-}*/
-/*void MoveGenerator::setAttacked(const ChessBoard *board) {
-    this->attacked_ = 0;
-    reset_bit(this->occupied_, this->kingPos_);
-    this->genPawnAttacks(board);
-    this->genKingAttacks(board);
-    this->genKnightAttacks(board);
-    this->genSlidingAttacks(board);
-    set_bit(this->occupied_, this->kingPos_);
-}
-void MoveGenerator::genPawnAttacks(const ChessBoard *board) {
-    // char dirL, dirR;
-
-    U64 pawns = board->occupied[kPiecePawn, this->opponent_);
-    ChessPos start;
-    // if(this->opponent_ == kPlayerWhite){
-    //     dirL = kRayDirNW;
-    //     dirR = kRayDirNE;
-    // } else {
-    //     dirL = kRayDirSW;
-    //     dirR = kRayDirSE;
-    // }
-
-    while(pawns){
-        start = bitscan_forward_iter(pawns);
-        //const ChessPos &start = list[i];
-        this->attacked_ |= (this->opponent_ == kPlayerWhite ? kWhitePawnAttackMasks[start] : kBlackPawnAttackMasks[start]);
-
-        //if(kRaySizes[start][dirL]) set_bit(this->attacked_,kRays[start][dirL][0]);
-        //if(kRaySizes[start][dirR]) set_bit(this->attacked_,kRays[start][dirR][0]);
-    }
-}
-void MoveGenerator::genKnightAttacks(const ChessBoard *board) {
-    U64 knights = board->occupied(kPieceKnight, this->opponent_);
-    ChessPos start;
-
-    while(knights){
-        start = bitscan_forward_iter(knights);
-        // const ChessPos &start = list[i];
-        this->attacked_ |= kKnightAttackMasks[start];
-        // for(int j = 0; j < kKnightPositionTableSize[start]; j++) set_bit(this->attacked_,kKnightPositionTable[start][j]);
-    }
-}
-void MoveGenerator::genKingAttacks(const ChessBoard *board) {
-
-    this->attacked_ |= kKingAttackMasks[board->kingPos(this->opponent_)];
-    // ChessPos start = this->board_->kingPos(this->opponent_);
-
-    // for(int dir = 0; dir < 8; dir++){
-    //     if(kRaySizes[start][dir]) set_bit(this->attacked_,kRays[start][dir][0]);
-    // }
-}
-void MoveGenerator::genSlidingAttacks(const ChessBoard *board) {
-    U64 rooks = board->occupied(kPieceRook, this->opponent_);
-    U64 bishops = board->occupied(kPieceBishop, this->opponent_);
-    U64 queens = board->occupied(kPieceQueen, this->opponent_);
-
-    bool isPinned;
-    int posInDir;
-    ChessPos start;
-
-    while(rooks){
-
-        start = bitscan_forward_iter(rooks);
-        for(int dir = 0; dir < 4; dir++) this->attacked_ |= this->dir_attacks(start, dir);
-    }
-
-    while(bishops){
-
-        start = bitscan_forward_iter(bishops);
-        for(int dir = 4; dir < 8; dir++) this->attacked_ |= this->dir_attacks(start, dir);
-
-    }
-
-    while(queens){
-
-        start = bitscan_forward_iter(queens);
-        for(int dir = 0; dir < 8; dir++) this->attacked_ |= this->dir_attacks(start, dir);
-    }
-}
-*/
 void MoveGenerator::genPseudoLegalMoves(vector<ChessMove> &moves) const {
     this->genKingMoves(moves);
     this->genPawnMoves(moves);
@@ -133,14 +38,14 @@ void MoveGenerator::genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMov
     //ChessBoard board(*this->board_);
     //for(ChessMove move : moves) std::cout << move.str() << std::endl;
     for(ChessMove &move : moves){
-        ChessBoard board(*this->board_);
-        board.doMove(move, false);
+        ChessBoard newBoard(*this->board_);
+        newBoard.doMove(move, false);
         //std::cout << move.str() << std::endl;
         //board.printBoard();
         //this->occupied_ = board.totalOccupied;
         //this->kingPos_ = board.kingPos(this->player_);
         //this->setAttacked(&board);
-        if(!board.inCheck(this->player_)) legalMoves.push_back(move);
+        if(!newBoard.inCheck(this->player_)) legalMoves.push_back(move);
         //board.undoMove(move, false);
     }
 }
@@ -148,15 +53,21 @@ void MoveGenerator::genKingMoves(vector<ChessMove> &moves) const {
 
     ChessMove move = ChessMove(this->board_->piece(this->kingPos_),this->kingPos_,this->kingPos_);
     //First check eight directions
-    for(int dir = 0; dir < 8; dir++){
-        if(kRaySizes[this->kingPos_][dir]){
-            move.newPos = kRays[this->kingPos_][dir][0];
-            //std::cout << move.newPos.str() << '\t' << this->attacked_[move.newPos.pos] << std::endl;
-            if(!this->hasPieceAtPos(move.newPos) || this->willMoveCapture(move)) {
-                moves.push_back(move);
-                move.captured = 0;
-            }
-        }
+    // for(int dir = 0; dir < 8; dir++){
+    //     if(kRaySizes[this->kingPos_][dir]){
+    //         move.newPos = kRays[this->kingPos_][dir][0];
+    //         //std::cout << move.newPos.str() << '\t' << this->attacked_[move.newPos.pos] << std::endl;
+    //         if(!this->hasPieceAtPos(move.newPos) || this->willMoveCapture(move)) {
+    //             moves.push_back(move);
+    //             move.captured = 0;
+    //         }
+    //     }
+    // }
+    U64 attacks = kKingAttackMasks[this->kingPos_] & this->validPositions_;
+    while(attacks){
+        move.newPos = bitscan_forward_iter(attacks);
+        move.captured = this->board_->piece(move.newPos);
+        moves.push_back(move);
     }
 
     //Then check if you can castle
@@ -195,18 +106,26 @@ void MoveGenerator::genKnightMoves(vector<ChessMove> &moves) const {
 
     U64 knights = this->board_->occupied[kPieceListInd[this->player_][kPieceKnight]];
     ChessPos start;
+    U64 attacks;
 
     while(knights){
         start = bitscan_forward_iter(knights);
         ChessMove move = ChessMove(this->board_->piece(start), start, start);
 
-        for(int j = 0; j < kKnightPositionTableSize[start]; j++){
-            move.newPos = kKnightPositionTable[start][j];
-            if(!this->hasPieceAtPos(move.newPos) || this->willMoveCapture(move)) {
-                moves.push_back(move);
-                move.captured = 0;
-            }
+        attacks = kKnightAttackMasks[start] & this->validPositions_;
+        while(attacks){
+            move.newPos = bitscan_forward_iter(attacks);
+            move.captured = this->board_->piece(move.newPos);
+            moves.push_back(move);
         }
+
+        // for(int j = 0; j < kKnightPositionTableSize[start]; j++){
+        //     move.newPos = kKnightPositionTable[start][j];
+        //     if(!this->hasPieceAtPos(move.newPos) || this->willMoveCapture(move)) {
+        //         moves.push_back(move);
+        //         move.captured = 0;
+        //     }
+        // }
     }
 }
 void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
@@ -215,6 +134,7 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
     bool isPinned, doTwoMoveCheck;
     ChessMove move;
     ChessPos start;
+    U64 attacks;
 
     if(this->player_ == kPlayerWhite){
         dirL = kRayDirNE;
@@ -317,7 +237,6 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
     U64 rooks = this->board_->occupied[kPieceListInd[this->player_][kPieceRook]];
     U64 bishops = this->board_->occupied[kPieceListInd[this->player_][kPieceBishop]];
     U64 queens = this->board_->occupied[kPieceListInd[this->player_][kPieceQueen]];
-    U64 notOccupied = ~(this->playerOccupied_ | kPosMasks[this->board_->kingPos(this->opponent_)]);
 
     bool isPinned;
     int posInDir;
@@ -332,28 +251,11 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
         start = bitscan_forward_iter(rooks);
         move = ChessMove(this->board_->piece(start),start,start);
 
-        // attacks = this->board_->rookAttacks(start, this->occupied_) & notOccupied;
-        // //print_bitboard(attacks);
-        // //print_bitboard(attacks & notOccupied);
-        // while(attacks){
-        //     move.newPos = bitscan_forward_iter(attacks);
-        //     moves.push_back(move);
-        // }
-
-        for(int dir = 0; dir < 4; dir++){
-            //std::cout << start.str() << std::endl;
-            for(posInDir = 0; posInDir < kRaySizes[start][dir] && !this->hasPieceAtPos(kRays[start][dir][posInDir]); posInDir++) {
-                move.newPos = kRays[start][dir][posInDir];
-                moves.push_back(move);
-            }
-            
-            if(posInDir < kRaySizes[start][dir]) {
-                move.newPos = kRays[start][dir][posInDir];
-                if(this->willMoveCapture(move)) {
-                    moves.push_back(move);
-                    move.captured = 0;
-                }
-            }
+        attacks = this->board_->rookAttacks(start, this->occupied_) & this->validPositions_;
+        while(attacks){
+            move.newPos = bitscan_forward_iter(attacks);
+            move.captured = this->board_->piece(move.newPos);
+            moves.push_back(move);
         }
     }
 
@@ -362,20 +264,11 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
         start = bitscan_forward_iter(bishops);
         move = ChessMove(this->board_->piece(start),start,start);
 
-        for(int dir = 4; dir < 8; dir++){
-            //std::cout << start.str() << std::endl;
-            for(posInDir = 0; posInDir < kRaySizes[start][dir] && !this->hasPieceAtPos(kRays[start][dir][posInDir]); posInDir++) {
-                move.newPos = kRays[start][dir][posInDir];
-                moves.push_back(move);
-            }
-            
-            if(posInDir < kRaySizes[start][dir]) {
-                move.newPos = kRays[start][dir][posInDir];
-                if(this->willMoveCapture(move)) {
-                    moves.push_back(move);
-                    move.captured = 0;
-                }
-            }
+        attacks = this->board_->bishopAttacks(start, this->occupied_) & this->validPositions_;
+        while(attacks){
+            move.newPos = bitscan_forward_iter(attacks);
+            move.captured = this->board_->piece(move.newPos);
+            moves.push_back(move);
         }
     }
 
@@ -384,20 +277,11 @@ void MoveGenerator::genSlidingMoves(vector<ChessMove> &moves) const {
         start = bitscan_forward_iter(queens);
         move = ChessMove(this->board_->piece(start),start,start);
 
-        for(int dir = 0; dir < 8; dir++){
-            //std::cout << start.str() << std::endl;
-            for(posInDir = 0; posInDir < kRaySizes[start][dir] && !this->hasPieceAtPos(kRays[start][dir][posInDir]); posInDir++) {
-                move.newPos = kRays[start][dir][posInDir];
-                moves.push_back(move);
-            }
-            
-            if(posInDir < kRaySizes[start][dir]) {
-                move.newPos = kRays[start][dir][posInDir];
-                if(this->willMoveCapture(move)) {
-                    moves.push_back(move);
-                    move.captured = 0;
-                }
-            }
+        attacks = (this->board_->rookAttacks(start, this->occupied_) | this->board_->bishopAttacks(start, this->occupied_)) & this->validPositions_;
+        while(attacks){
+            move.newPos = bitscan_forward_iter(attacks);
+            move.captured = this->board_->piece(move.newPos);
+            moves.push_back(move);
         }
     }
 }
@@ -406,15 +290,8 @@ MoveGenerator::MoveGenerator() {
     return;
 }
 
-bool MoveGenerator::fiftyMoveRuleStalemate() const {
-    return this->board_->movesSinceLastCapture() > 50;
-}
-bool MoveGenerator::fiftyMoveRuleStalemate(ChessBoard &board) const {
-    return board.movesSinceLastCapture() > 50;
-}
-
 bool MoveGenerator::stalemate() {
-    if(this->fiftyMoveRuleStalemate()) return true;
+    if(this->board_->fiftyMoveStalemate()) return true;
     return this->getMoves().empty() && !this->board_->inCheck(this->player_);
 }
 bool MoveGenerator::stalemate(ChessBoard &board){
@@ -448,13 +325,14 @@ void MoveGenerator::setBoard(ChessBoard &board) {
     this->kingPos_ = board.kingPos(this->player_);
     this->enPassantSquare_ = board.enPassantSquare();
 
-    this->playerOccupied_ = 0;
+    this->validPositions_ = 0;
     this->opponentOccupied_ = 0;
-    for(PieceType type = kPiecePawn; type <= kPieceKing; type++){
-        this->playerOccupied_ |= board.occupied[kPieceListInd[this->player_][type]];
+    for(PieceType type = kPiecePawn; type <= kPieceKing; type++) {
+        this->validPositions_ |= board.occupied[kPieceListInd[this->player_][type]];
         this->opponentOccupied_ |= board.occupied[kPieceListInd[this->opponent_][type]];
     }
-    
+    //this->validPositions_ |= board.kingPos(this->opponent_);
+    this->validPositions_ = ~this->validPositions_;
     this->occupied_ = this->board_->totalOccupied;
     //this->setAttacked(this->board_);
 }

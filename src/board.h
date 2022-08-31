@@ -45,11 +45,12 @@ class ChessBoard {
     ChessPos whiteKingPos_, blackKingPos_;
 
     size_t key_;
-    unsigned short boardData_;
     int moveNum_;
+    unsigned int boardData_;
 
     void initKey(unsigned int data);
     void setKey(ChessMove move);
+    void setData(ChessMove move);
 
     public:
 
@@ -74,6 +75,9 @@ class ChessBoard {
     }
     inline const Byte movesSinceLastCapture() const {
         return this->boardData_ >> 11;
+    }
+    inline bool fiftyMoveStalemate() const {
+        return this->movesSinceLastCapture() > 100;
     }
     inline ChessPos kingPos(Player player) const {
         return (player == kPlayerWhite ? this->whiteKingPos_ : this->blackKingPos_);

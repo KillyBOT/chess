@@ -192,14 +192,15 @@ void ChessBoard::fromFen(std::string fen) {
 void ChessBoard::setKey(ChessMove move) {
     size_t newKey = this->key();
     Byte castlingInfo = this->boardData_ & 0b1111;
-    unsigned int newData = 0;
 
     if((this->boardData_ >> 10) & 1){ //If it's an invalid space, then unhash the empty file
         newKey ^= kZobristEnPassantNums[8];
     } else { //Otherwise, unhash the file of the previous en passant file
-        newKey ^= kZobristEnPassantNums[(this->boardData_ >> 4) & 0b111];
+        newKey ^= kZobristEnPassantNums[(this->boardData_ >> 4) & 0b000111];
     }
     newKey ^= kZobristCastlingNums[castlingInfo];
+
+    this->setData(move);
 
     //If castling, remove the rook from the old position and add it at the new position
     if(move.moveData == kMoveFlagIsCastling){
@@ -226,8 +227,25 @@ void ChessBoard::setKey(ChessMove move) {
     newKey ^= kZobristPieceNums[move.newPos][move.piece];
 
     //Generate the new data
+
+    if(move.moveData == kMoveFlagEnPassantEligible) {
+        newKey ^= kZobristEnPassantNums[((this->boardData_ >> 4) & 0b111)];
+    } else {
+        newKey ^= kZobristEnPassantNums[8];
+    }
+    newKey ^= kZobristCastlingNums[newKey & 0b1111];
+    newKey ^= kZobristBlackToMoveNum;
+
+    this->key_ = newKey;
+}
+void ChessBoard::setData(ChessMove move) {
+
+    unsigned int newData = 0;
+    Byte castlingInfo = this->boardData_ & 0b1111;
+
     if(!(move.isCapturing() || piece_type(move.piece) == kPiecePawn)) newData = this->movesSinceLastCapture() + 1;
     newData <<= 7;
+
     if(move.moveData == kMoveFlagEnPassantEligible) {
         if(piece_player(move.piece) == kPlayerWhite) {
             move.newPos -= 8;
@@ -267,15 +285,6 @@ void ChessBoard::setKey(ChessMove move) {
     }
     newData |= castlingInfo;
 
-    if(move.moveData == kMoveFlagEnPassantEligible) {
-        newKey ^= kZobristEnPassantNums[((newData >> 4) & 0b111)];
-    } else {
-        newKey ^= kZobristEnPassantNums[8];
-    }
-    newKey ^= kZobristCastlingNums[newKey & 0b1111];
-    newKey ^= kZobristBlackToMoveNum;
-
-    this->key_ = newKey;
     this->boardData_ = newData;
 }
 void ChessBoard::initKey(unsigned int data) {

@@ -63,21 +63,21 @@ ChessBoard::ChessBoard(std::string fen){
 
     this->fromFen(fen);
 }
-ChessBoard::ChessBoard(const ChessBoard &board) {
+// ChessBoard::ChessBoard(const ChessBoard &board) {
 
-    memcpy(this->pieces_, board.pieces_, 64 * sizeof(ChessPiece));
-    memcpy(this->occupied, board.occupied, 16 * sizeof(U64));
-    this->totalOccupied = board.totalOccupied;
+//     memcpy(this->pieces_, board.pieces_, 64 * sizeof(ChessPiece));
+//     memcpy(this->occupied, board.occupied, 16 * sizeof(U64));
+//     this->totalOccupied = board.totalOccupied;
 
-    this->boardData_ = board.boardData_;
-    this->key_ = board.key_;
+//     this->boardData_ = board.boardData_;
+//     this->key_ = board.key_;
 
-    this->blackToMove_ = board.blackToMove_;
-    this->moveNum_ = board.moveNum_;
-    this->whiteKingPos_ = board.whiteKingPos_;
-    this->blackKingPos_ = board.blackKingPos_;
-    // memcpy(this, &board, sizeof(ChessBoard));
-}
+//     this->blackToMove_ = board.blackToMove_;
+//     this->moveNum_ = board.moveNum_;
+//     this->whiteKingPos_ = board.whiteKingPos_;
+//     this->blackKingPos_ = board.blackKingPos_;
+//     // memcpy(this, &board, sizeof(ChessBoard));
+// }
 
 void ChessBoard::fromFen(std::string fen) {
 
@@ -310,6 +310,48 @@ int ChessBoard::playerScore(Player player) const {
     return (player == kPlayerWhite ? scores[0] : scores[1]);
 }
 
+bool ChessBoard::posAttacked(ChessPos pos, Player attacker) const {
+    U64 mask;
+    U64 rooksAndQueens = this->occupied[kPieceListInd[attacker][kPieceRook]] | this->occupied[kPieceListInd[attacker][kPieceQueen]];
+    U64 bishopsAndQueens = this->occupied[kPieceListInd[attacker][kPieceBishop]] | this->occupied[kPieceListInd[attacker][kPieceQueen]];
+
+    //First check for pawns
+    if(attacker == kPlayerBlack) mask = kWhitePawnAttackMasks[pos];
+    else mask = kBlackPawnAttackMasks[pos];
+
+    if(mask & this->occupied[kPieceListInd[attacker][kPiecePawn]]) return true;
+
+    //Then check for kings
+    if(kKingAttackMasks[pos] & this->occupied[kPieceListInd[attacker][kPieceKing]]) return true;
+
+    //Then check for knights
+    if(kKnightAttackMasks[pos] & this->occupied[kPieceListInd[attacker][kPieceKnight]]) return true;
+
+    //Then check for rooks and queens
+    // for(int dir = 0; dir < 4; dir++){
+    //     //mask = dir_attacks(pos, dir, this->occupied_);
+    //     if(mask & rooksAndQueens) return true;
+    // }
+    // //Finally, check for bishops and queens
+    // for(int dir = 4; dir < 8; dir++){
+    //     //mask = dir_attacks(pos, dir, this->occupied_);
+    //     if(mask & bishopsAndQueens) return true;
+    // }
+    // this->printBoard();
+    //print_bitboard(this->rookAttacks(pos, this->totalOccupied));
+    //print_bitboard(this->bishopAttacks(pos, this->totalOccupied));
+
+    if(this->rookAttacks(pos, this->totalOccupied) & rooksAndQueens) return true;
+    if(this->bishopAttacks(pos, this->totalOccupied) & bishopsAndQueens) return true;
+    //print_bitboard(this->rookAttacks(pos, this->totalOccupied));
+
+    return false;
+}
+
+bool ChessBoard::inCheck(Player player) const {
+    return this->posAttacked(this->kingPos(player), player_opponent(player));
+}
+
 void ChessBoard::printBoard() const {
     using std::cout;
     using std::endl;
@@ -518,6 +560,8 @@ void ChessBoard::undoMove(ChessMove move, bool update) {
     } else if (move.isCapturing()) this->addPiece(move.newPos, move.captured);
 
     if(update){
+        this->blackToMove_ = !this->blackToMove_;
         this->moveNum_--;
     }
+
 }

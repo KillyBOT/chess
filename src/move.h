@@ -10,12 +10,12 @@
 
 const Byte kMoveFlagNone = 0;
 const Byte kMoveFlagIsCastling = 1;
-const Byte kMoveFlagPromotingToQueen = 2;
-const Byte kMoveFlagPromotingToRook = 3;
-const Byte kMoveFlagPromotingToKnight = 4;
-const Byte kMoveFlagPromotingToBishop = 5;
-const Byte kMoveFlagEnPassant = 6;
-const Byte kMoveFlagEnPassantEligible = 7;
+const Byte kMoveFlagEnPassant = 2;
+const Byte kMoveFlagEnPassantEligible = 3;
+const Byte kMoveFlagPromotingToQueen = 4;
+const Byte kMoveFlagPromotingToRook = 5;
+const Byte kMoveFlagPromotingToKnight = 6;
+const Byte kMoveFlagPromotingToBishop = 7;
 
 struct ChessMove {
 
@@ -27,13 +27,13 @@ struct ChessMove {
     
     ChessMove();
     ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos);
-    ChessMove(const ChessMove &move);
+    //ChessMove(const ChessMove &move);
 
     inline bool isCapturing() const {
         return piece_type(this->captured) != kPieceNone;
     }
     inline bool isPromoting() const {
-        return this->moveData == kMoveFlagPromotingToQueen || this->moveData == kMoveFlagPromotingToRook || this->moveData == kMoveFlagPromotingToKnight || this->moveData == kMoveFlagPromotingToBishop;
+        return this->moveData >= kMoveFlagPromotingToQueen;
     }
 
     PieceType promotionType() const;

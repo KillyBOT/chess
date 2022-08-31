@@ -15,6 +15,8 @@
 U64 kPosMasks[64];
 U64 kPosResetMasks[64];
 U64 kRayMasks[64][8];
+U64 kRookCheckMasks[64];
+U64 kBishopCheckMasks[64];
 U64 kRookAttackMasks[64];
 U64 kBishopAttackMasks[64];
 U64 kKingAttackMasks[64];
@@ -179,7 +181,7 @@ U64 find_magic(ChessPos pos, int bits, bool bishop) {
 
     for(i = 0; i < p; i++) {
         b[i] = blockers_from_perm(i, n, mask);
-        print_bitboard(b[i]);
+        //print_bitboard(b[i]);
         //std::cout << i << std::endl;
         //print_bitboard(b[i]);
         if(bishop){
@@ -234,6 +236,9 @@ void init_masks() {
         for(int dir = 0; dir < 4; dir++) kRookAttackMasks[start] |= kRayMasks[start][dir];
         for(int dir = 4; dir < 8; dir++) kBishopAttackMasks[start] |= kRayMasks[start][dir];
 
+        kRookCheckMasks[start] = rmask(start);
+        kBishopCheckMasks[start] = bmask(start);
+
         if(kRaySizes[start][kRayDirNW]) set_bit(kWhitePawnAttackMasks[start],kRays[start][kRayDirNW][0]);
         if(kRaySizes[start][kRayDirSW]) set_bit(kBlackPawnAttackMasks[start],kRays[start][kRayDirSW][0]);
         if(kRaySizes[start][kRayDirSE]) set_bit(kBlackPawnAttackMasks[start],kRays[start][kRayDirSE][0]);
@@ -267,8 +272,12 @@ void create_magic_databases() {
         p = 1 << n;
         for(i = 0; i < p; i++) {
             blockers = blockers_from_perm(i, n, rookMask);
+            //print_bitboard(blockers);
+            //std::cout << std::endl;
             ind = bitboard_ind(blockers, rookMagic, kMagicRookIndBits[pos]);
             for(int dir = 0; dir < 4; dir++) rookAttacks[pos][ind] |= dir_attacks(pos, dir, blockers);
+            //print_bitboard(rookAttacks[pos][ind]);
+            //std::cout << std::endl << std::endl;
         }
 
         n = kMagicBishopIndBits[pos];
@@ -276,7 +285,8 @@ void create_magic_databases() {
         for(i = 0; i < p; i++) {
             blockers = blockers_from_perm(i, n, bishopMask);
             ind = bitboard_ind(blockers, bishopMagic, kMagicBishopIndBits[pos]);
-            for(int dir = 4; dir < 8; dir++) rookAttacks[pos][ind] |= dir_attacks(pos, dir, blockers);
+            for(int dir = 4; dir < 8; dir++) bishopAttacks[pos][ind] |= dir_attacks(pos, dir, blockers);
+            //print_bitboard(bishopAttacks[pos][ind]);
         }
     }
 

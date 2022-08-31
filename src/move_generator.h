@@ -29,18 +29,23 @@ class MoveGenerator {
 
     //static unordered_map<std::size_t, vector<ChessMove>> knownBoards_;
 
-    bool hasPieceAtPos(int ind) const;
+    bool hasPieceAtPos(ChessPos pos) const;
     bool willMoveCapture(ChessMove &move) const;
     bool enPassantCheck(ChessMove &move) const;
     
     //U64 dirAttacks(ChessPos start, int dir, U64 occupied) const;
 
-    inline U64 rookAttacks(ChessPos start, U64 occupied) const {
-        return kRookAttacks[start][bitboard_ind(occupied & kRookAttackMasks[start], kRookMagics[start], kMagicRookIndBits[start])];
-    }
-    inline U64 bishopAttacks(ChessPos start, U64 occupied) const {
-        return kBishopAttacks[start][bitboard_ind(occupied & kBishopAttackMasks[start], kBishopMagics[start], kMagicBishopIndBits[start])];
-    }
+    // inline U64 rookAttacks(ChessPos start, U64 occupied) const {
+    //     U64 blockers = occupied & kRookAttackMasks[start];
+    //     if(blockers) return kRookAttacks[start][bitboard_ind(blockers, kRookMagics[start], kMagicRookIndBits[start])];
+    //     return kRookAttackMasks[start];
+    // }
+    // inline U64 bishopAttacks(ChessPos start, U64 occupied) const {
+    //     U64 blockers = occupied & kBishopAttackMasks[start];
+    //     print_bitboard(kBishopAttackMasks[start]);
+    //     if(blockers) return kBishopAttacks[start][bitboard_ind(blockers, kBishopMagics[start], kMagicBishopIndBits[start])];
+    //     return kBishopAttackMasks[start];
+    // }
     void setAttacked(const ChessBoard *board);
     void genPawnAttacks(const ChessBoard *board);
     void genKnightAttacks(const ChessBoard *board);
@@ -72,9 +77,6 @@ class MoveGenerator {
 
     bool stalemate();
     bool stalemate(ChessBoard &board);
-
-    bool inCheck() const;
-    bool inCheck(ChessBoard &board, Player player) const;
 
     bool hasLost();
     bool hasLost(ChessBoard &board);

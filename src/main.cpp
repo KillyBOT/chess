@@ -14,9 +14,10 @@
 #include "mcts.h"
 #include "minimax.h"
 
-int perft(ChessBoard &board, int depth){
+int perft(ChessBoard &board, int depth, int startDepth){
 
     //board.printBoard();
+    //std::cout << board.inCheck(board.opponent()) << std::endl;
     //board.printPieces();
     //print_bitboard(board.occupied());
 
@@ -32,8 +33,8 @@ int perft(ChessBoard &board, int depth){
         newBoard.doMove(move);
         //std::cout << move.str() << std::endl;
         //newBoard.printBoard();
-        toAdd = perft(newBoard, depth-1);
-        //if(depth == 1) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
+        toAdd = perft(newBoard, depth-1, startDepth);
+        if(depth == startDepth) std::cout << move.strUCI() << '\t' << toAdd << std::endl;
         positionNum += toAdd;
     }
 
@@ -78,13 +79,14 @@ int main()
     // mg.printAttacked();
 
     ChessBoard board;
-    board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-    // board.fromFen("rnRq1k1r/pp2bppp/2p5/8/2B5/2P5/PP2NnPP/RNBQK2R b KQ - 0 1");
+    // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+    // board.fromFen("rnbqkbnr/1ppppppp/p7/8/Q7/2P5/PP1PPPPP/RNB1KBNR b KQkq - 0 1");
     board.printBoard();
+    //perft(board, 5, 5);
 
-    for(int i = 1; i < 6; i++){
+    for(int i = 1; i < 7; i++){
         auto startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-        int positionNum = perft(board, i);
+        int positionNum = perft(board, i, 100);
         auto endTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         cout << i << '\t' << positionNum << '\t' << endTime - startTime << endl;
     }

@@ -19,6 +19,8 @@ extern U64 kPosResetMasks[64];
 extern U64 kRayMasks[64][8];
 extern U64 kRookAttackMasks[64];
 extern U64 kBishopAttackMasks[64];
+extern U64 kRookCheckMasks[64];
+extern U64 kBishopCheckMasks[64];
 extern U64 kKingAttackMasks[64];
 extern U64 kKnightAttackMasks[64];
 extern U64 kWhitePawnAttackMasks[64];

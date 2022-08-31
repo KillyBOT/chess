@@ -1,6 +1,7 @@
 #ifndef BOARD_H_
 #define BOARD_H_
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -57,7 +58,7 @@ class ChessBoard {
 
     ChessBoard(bool initBoard = true);
     ChessBoard(std::string fenStr);
-    ChessBoard(const ChessBoard &board);
+    //ChessBoard(const ChessBoard &board);
 
     inline Player player() const {
         return this->blackToMove_ ? kPlayerBlack : kPlayerWhite;
@@ -83,10 +84,22 @@ class ChessBoard {
     inline bool canCastle(Player player, bool kingside) const {
         return this->boardData_ & (1 << (player << 1 + !kingside));
     }
+    inline U64 rookAttacks(ChessPos start, U64 occupied) const {
+        U64 blockers = occupied & kRookCheckMasks[start];
+        if(blockers) return kRookAttacks[start][bitboard_ind(blockers, kRookMagics[start], kMagicRookIndBits[start])];
+        return kRookAttackMasks[start];
+    }
+    inline U64 bishopAttacks(ChessPos start, U64 occupied) const {
+        U64 blockers = occupied & kBishopCheckMasks[start];
+        if(blockers) return kBishopAttacks[start][bitboard_ind(blockers, kBishopMagics[start], kMagicBishopIndBits[start])];
+        return kBishopAttackMasks[start];
+    }
 
     int turnNum() const;
     int playerScore(Player player) const;
     std::string fen() const;
+    bool posAttacked(ChessPos pos, Player attacker) const;
+    bool inCheck(Player player) const;
 
     void printBoard() const;
     void printMoves() const;

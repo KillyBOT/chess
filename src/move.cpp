@@ -17,13 +17,13 @@ ChessMove::ChessMove(ChessPiece piece, ChessPos oldPos, ChessPos newPos){
     this->newPos = newPos;
     this->moveData = kMoveFlagNone;
 }
-ChessMove::ChessMove(const ChessMove &move) {
-    this->piece = move.piece;
-    this->captured = move.captured;
-    this->oldPos = move.oldPos;
-    this->newPos = move.newPos;
-    this->moveData = move.moveData;
-}
+// ChessMove::ChessMove(const ChessMove &move) {
+//     this->piece = move.piece;
+//     this->captured = move.captured;
+//     this->oldPos = move.oldPos;
+//     this->newPos = move.newPos;
+//     this->moveData = move.moveData;
+// }
 
 PieceType ChessMove::promotionType() const {
     switch(this->moveData){

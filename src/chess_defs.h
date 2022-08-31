@@ -24,7 +24,8 @@ namespace chess_defs{
     const std::array<int, 7> kPieceValue = {0, 100, 500, 300, 320, 900, 0};
 
     inline Player player_opponent(Player player){
-        return player == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
+        return !player;
+        //return player == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
     }
 }
 

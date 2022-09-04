@@ -47,18 +47,20 @@ class ChessBoard {
     size_t key_;
     int moveNum_;
     unsigned int boardData_;
+    bool useZobristKey_;
 
     void initKey(unsigned int data);
     void setKey(ChessMove move);
     void setData(ChessMove move);
+    void setAttacked(Player player);
 
     public:
 
     U64 occupied[16];
     U64 totalOccupied;
 
-    ChessBoard(bool initBoard = true);
-    ChessBoard(std::string fenStr);
+    ChessBoard(bool initBoard = true, bool useZobristKey = false);
+    ChessBoard(std::string fenStr, bool useZobristKey = false);
     //ChessBoard(const ChessBoard &board);
 
     inline Player player() const {
@@ -69,6 +71,9 @@ class ChessBoard {
     }
     inline const ChessPiece &piece(ChessPos pos) const {
         return this->pieces_[pos];
+    }
+    inline bool hasPieceAtPos(ChessPos pos) const {
+        return this->totalOccupied & kPosMasks[pos];
     }
     inline const size_t &key() const {
         return this->key_;
@@ -89,14 +94,14 @@ class ChessBoard {
         return this->boardData_ & (1 << (player << 1 + !kingside));
     }
     inline U64 rookAttacks(ChessPos start, U64 occupied) const {
-        U64 blockers = occupied & kRookCheckMasks[start];
-        if(blockers) return kRookAttacks[start][bitboard_ind(blockers, kRookMagics[start], kMagicRookIndBits[start])];
-        return kRookAttackMasks[start];
+        occupied &= kRookCheckMasks[start];
+        return kRookAttacks[start][(occupied * kRookMagics[start]) >> (64 - kMagicRookIndBits[start])];
+        //return kRookAttackMasks[start];
     }
     inline U64 bishopAttacks(ChessPos start, U64 occupied) const {
-        U64 blockers = occupied & kBishopCheckMasks[start];
-        if(blockers) return kBishopAttacks[start][bitboard_ind(blockers, kBishopMagics[start], kMagicBishopIndBits[start])];
-        return kBishopAttackMasks[start];
+        occupied &= kBishopCheckMasks[start];
+        return kBishopAttacks[start][(occupied * kBishopMagics[start]) >> (64 - kMagicBishopIndBits[start])];
+        //return kBishopAttackMasks[start];
     }
 
     int turnNum() const;

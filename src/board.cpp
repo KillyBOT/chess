@@ -15,6 +15,8 @@ size_t kZobristBlackToMoveNum;
 size_t kZobristCastlingNums[16];
 size_t kZobristEnPassantNums[9];
 
+static const int kDefaultZobristKey = 0b10000001111;
+
 void init_zobrist_nums() {
     srand(43252003); //The first 8 digits of the number of possible rubik's cube configurations
 
@@ -33,7 +35,7 @@ void init_zobrist_nums() {
     for(int i = 0; i < 9; i++) kZobristEnPassantNums[i] = rand();
 }
 
-ChessBoard::ChessBoard(bool initBoard){
+ChessBoard::ChessBoard(bool initBoard, bool useZobristKey){
 
     this->blackToMove_ = false;
     this->whiteKingPos_ = -1;
@@ -44,14 +46,13 @@ ChessBoard::ChessBoard(bool initBoard){
     memset(this->occupied, 0 , 16 * sizeof(U64));
     this->totalOccupied = 0;
 
-    if(initBoard){
-        this->fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    } else {
-        this->initKey(0b10000001111);
-    }
+    this->useZobristKey_ = useZobristKey;
+    if(initBoard) this->fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    else if(this->useZobristKey_) this->initKey(kDefaultZobristKey);
+    else this->boardData_ = kDefaultZobristKey;
 
 }
-ChessBoard::ChessBoard(std::string fen){
+ChessBoard::ChessBoard(std::string fen, bool useZobristKey){
     this->blackToMove_ = false;
     this->whiteKingPos_ = -1;
     this->blackKingPos_ = -1;
@@ -61,6 +62,7 @@ ChessBoard::ChessBoard(std::string fen){
     memset(this->occupied, 0 , 16 * sizeof(U64));
     this->totalOccupied = 0;
 
+    this->useZobristKey_ = useZobristKey;
     this->fromFen(fen);
 }
 // ChessBoard::ChessBoard(const ChessBoard &board) {
@@ -187,7 +189,8 @@ void ChessBoard::fromFen(std::string fen) {
 
     fen.erase(0, spacePos + 1);
 
-    this->initKey(data);
+    if(this->useZobristKey_) this->initKey(data);
+    else this->boardData_ = kDefaultZobristKey;
 }
 void ChessBoard::setKey(ChessMove move) {
     size_t newKey = this->key();
@@ -543,7 +546,8 @@ void ChessBoard::doMove(ChessMove move, bool update) {
     if(update){
         this->blackToMove_ = !this->blackToMove_;
         this->moveNum_++;
-        this->setKey(move);
+        if(this->useZobristKey_) this->setKey(move);
+        else this->setData(move);
     }
 
     //if(move.isEnPassant()) this->printBoard();

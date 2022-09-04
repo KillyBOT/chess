@@ -102,7 +102,7 @@ U64 random_bitboard_fewbits();
 U64 blockers_from_perm(int perm, int bits, U64 mask);
 
 inline int bitboard_ind(U64 blockers, U64 magic, int bits){
-    return (int)((blockers * magic) >> (64 - bits));
+    return (blockers * magic) >> (64 - bits);
 }
 
 U64 find_magic(ChessPos pos, int bits, bool bishop);

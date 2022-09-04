@@ -102,7 +102,7 @@ int main()
     // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
     // board.fromFen("rnbqkbnr/1ppppppp/p7/8/Q7/2P5/PP1PPPPP/RNB1KBNR b KQkq - 0 1");
     board.printBoard();
-    // perft(board, 6);
+    perft(board, 6);
 
     // for(int i = 1; i < 7; i++){
     //     auto startTime = std::chrono::steady_clock::now();
@@ -115,35 +115,35 @@ int main()
     //cout << std::hex << find_magic(0, kMagicBishopIndBits[0], true) << endl;
     //create_magic_databases();
 
-    MCTS mcts = MCTS();
-    Minimax minimax = Minimax(heuristic_basic, 4, false, false);
+    // MCTS mcts = MCTS();
+    // Minimax minimax = Minimax(heuristic_basic, 4, false, false);
 
-    mg.setBoard(board);
-    srand(time(NULL));
-    board.printBoard();
+    // mg.setBoard(board);
+    // srand(time(NULL));
+    // board.printBoard();
 
-    while(!mg.hasLost() && !mg.stalemate()){
-        //mg.printAttacked();
-        //mg.printForced();
+    // while(!mg.hasLost() && !mg.stalemate()){
+    //     //mg.printAttacked();
+    //     //mg.printForced();
 
-        //board.doMove(mcts.findOptimalMove(board));
-        board.doMove(minimax.findOptimalMove(board));
-        board.printBoard();
+    //     //board.doMove(mcts.findOptimalMove(board));
+    //     board.doMove(minimax.findOptimalMove(board));
+    //     board.printBoard();
 
-        mg.setBoard(board);
-        if(mg.hasLost() || mg.stalemate()) break;
+    //     mg.setBoard(board);
+    //     if(mg.hasLost() || mg.stalemate()) break;
 
-        const vector<ChessMove> &moves = mg.getMoves(board);
-        board.doMove(moves[rand() % moves.size()]);
-        board.printBoard();
-        mg.setBoard(board);
-    }
-    board.printBoard();
-    if(mg.stalemate()) cout << "Stalemate!" << endl;
-    else{
-        if(board.player() == kPlayerWhite) cout << "Black wins!" << endl;
-        else cout << "White wins!" << endl;
-    }
+    //     const vector<ChessMove> &moves = mg.getMoves(board);
+    //     board.doMove(moves[rand() % moves.size()]);
+    //     board.printBoard();
+    //     mg.setBoard(board);
+    // }
+    // board.printBoard();
+    // if(mg.stalemate()) cout << "Stalemate!" << endl;
+    // else{
+    //     if(board.player() == kPlayerWhite) cout << "Black wins!" << endl;
+    //     else cout << "White wins!" << endl;
+    // }
 
     // cout << ChessPos("a3").pos << endl;
     // cout << ChessPos("a3").str() << endl;

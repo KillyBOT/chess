@@ -30,7 +30,7 @@ struct ChessMove {
     //ChessMove(const ChessMove &move);
 
     inline bool isCapturing() const {
-        return piece_type(this->captured) != kPieceNone;
+        return this->captured;
     }
     inline bool isPromoting() const {
         return this->moveData >= kMoveFlagPromotingToQueen;

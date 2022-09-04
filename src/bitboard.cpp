@@ -274,7 +274,7 @@ void create_magic_databases() {
             blockers = blockers_from_perm(i, n, rookMask);
             //print_bitboard(blockers);
             //std::cout << std::endl;
-            ind = bitboard_ind(blockers, rookMagic, kMagicRookIndBits[pos]);
+            ind = bitboard_ind(blockers, rookMagic, n);
             for(int dir = 0; dir < 4; dir++) rookAttacks[pos][ind] |= dir_attacks(pos, dir, blockers);
             //print_bitboard(rookAttacks[pos][ind]);
             //std::cout << std::endl << std::endl;
@@ -284,7 +284,7 @@ void create_magic_databases() {
         p = 1 << n;
         for(i = 0; i < p; i++) {
             blockers = blockers_from_perm(i, n, bishopMask);
-            ind = bitboard_ind(blockers, bishopMagic, kMagicBishopIndBits[pos]);
+            ind = bitboard_ind(blockers, bishopMagic, n);
             for(int dir = 4; dir < 8; dir++) bishopAttacks[pos][ind] |= dir_attacks(pos, dir, blockers);
             //print_bitboard(bishopAttacks[pos][ind]);
         }

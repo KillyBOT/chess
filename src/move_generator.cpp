@@ -7,9 +7,8 @@
 
 MoveGenerator gMoveGenerator;
 
-bool MoveGenerator::hasPieceAtPos(ChessPos pos) const {
-    return this->occupied_ & kPosMasks[pos];
-}
+static const int kMaxMoveNum = 218; //The theoretical maximum number of moves that could be done in a position
+
 bool MoveGenerator::willMoveCapture(ChessMove &move) const {
     if(this->opponentOccupied_ & kPosMasks[move.newPos]){
         move.captured = this->board_->piece(move.newPos);
@@ -134,7 +133,6 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
     bool isPinned, doTwoMoveCheck;
     ChessMove move;
     ChessPos start;
-    U64 attacks;
 
     if(this->player_ == kPlayerWhite){
         dirL = kRayDirNE;
@@ -194,27 +192,25 @@ void MoveGenerator::genPawnMoves(vector<ChessMove> &moves) const {
         move.captured = 0;
 
         doTwoMoveCheck = false;
-        if(kRaySizes[start][dirF]){
-            move.newPos = kRays[start][dirF][0];
-            if(!this->hasPieceAtPos(move.newPos)){
-                doTwoMoveCheck = true;
-                if(pos_rank(move.newPos) == promoteRank){
-                    move.moveData = kMoveFlagPromotingToBishop;
-                    moves.push_back(move);
-                    move.moveData = kMoveFlagPromotingToRook;
-                    moves.push_back(move);
-                    move.moveData = kMoveFlagPromotingToKnight;
-                    moves.push_back(move);
-                    move.moveData = kMoveFlagPromotingToQueen;
-                }
+        move.newPos = kRays[start][dirF][0];
+        if(!this->board_->hasPieceAtPos(move.newPos)){
+            doTwoMoveCheck = true;
+            if(pos_rank(move.newPos) == promoteRank){
+                move.moveData = kMoveFlagPromotingToBishop;
                 moves.push_back(move);
-                move.moveData = kMoveFlagNone;
+                move.moveData = kMoveFlagPromotingToRook;
+                moves.push_back(move);
+                move.moveData = kMoveFlagPromotingToKnight;
+                moves.push_back(move);
+                move.moveData = kMoveFlagPromotingToQueen;
             }
+            moves.push_back(move);
+            move.moveData = kMoveFlagNone;
         }
 
-        if(doTwoMoveCheck && kRaySizes[start][dirF] > 1 && pos_rank(start) == startRank){
+        if(doTwoMoveCheck && pos_rank(start) == startRank){
             move.newPos = kRays[start][dirF][1];
-            if(!this->hasPieceAtPos(move.newPos)){
+            if(!this->board_->hasPieceAtPos(move.newPos)){
                 if(pos_rank(move.newPos) == promoteRank){
                     move.moveData = kMoveFlagPromotingToBishop;
                     moves.push_back(move);
@@ -309,7 +305,9 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
 
 vector<ChessMove> MoveGenerator::getMoves() {
     vector<ChessMove> pseudoLegalMoves, legalMoves;
+    pseudoLegalMoves.reserve(kMaxMoveNum);
     this->genPseudoLegalMoves(pseudoLegalMoves);
+    legalMoves.reserve(pseudoLegalMoves.size());
     this->genLegalMoves(legalMoves, pseudoLegalMoves);
     return legalMoves;
 }

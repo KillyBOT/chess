@@ -17,6 +17,8 @@ static const int kAttackedCoefficient = 10;
 static const int kPinnedCoefficient = 10;
 static const int kPositionCoefficient = 1;
 
+static const int kQuiescenceDepth = 10;
+
 static const int kPawnTableWhite[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     5, 10, 10, -20, -20, 10, 10, 5,
@@ -138,9 +140,15 @@ int heuristic_basic(ChessBoard &board, Player maxPlayer) {
     if(gMoveGenerator.hasLost()) score -= kLossPenalty;
     else if(board.inCheck(maxPlayer)) score -= kCheckPenalty;
     
+    if(board.player() == opponent) score *= -1;
+
     score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
 
-    if(board.player() == opponent) score *= -1;
+    // if(score){
+    //     std::cout << score << std::endl;
+    //     board.printBoard();
+    // }
+
 
     return score;
 }
@@ -154,9 +162,9 @@ int heuristic_complex(ChessBoard &board, Player maxPlayer){
     if(gMoveGenerator.hasLost()) score -= kLossPenalty;
     else if(board.inCheck(maxPlayer)) score -= kCheckPenalty;
     
-    score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
-
     if(board.player() == opponent) score *= -1;
+
+    score += (board.playerScore(maxPlayer) - board.playerScore(opponent)) * kMaterialCoefficient;
 
     //score -= gMoveGenerator.attacked().size() * kAttackedCoefficient;
     //score -= gMoveGenerator.pinned().size() * kPinnedCoefficient;
@@ -240,7 +248,7 @@ TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
 }
 
 int Minimax::evalBoard(ChessBoard &board){
-    //return this->heuristicFunc_(board, this->maxPlayer_);
+    return this->heuristicFunc_(board, this->maxPlayer_);
     if(!this->boardScores_.count(board.key())) {
         int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
         this->boardScores_.emplace(board.key(), this->heuristicFunc_(board, this->maxPlayer_));
@@ -254,7 +262,7 @@ int Minimax::evalBoard(ChessBoard &board){
     return this->boardScores_.at(board.key());
 }
 
-int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
+int Minimax::evalHelpMinimax(ChessBoard &board, int depth, bool isQuiet){
 
     if(gMoveGenerator.getMoves(board).empty() || depth <= 0) return this->evalBoard(board);
 
@@ -267,7 +275,7 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
         for(ChessMove move : gMoveGenerator.getMoves(board)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
-            val = std::max(evalHelpMinimax(newBoard,depth-1),val);
+            val = std::max(evalHelpMinimax(newBoard, depth-1, move.isQuiet()),val);
         } 
 
     } else {
@@ -277,14 +285,14 @@ int Minimax::evalHelpMinimax(ChessBoard &board, int depth){
         for(ChessMove move : gMoveGenerator.getMoves(board)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
-            val = std::min(evalHelpMinimax(newBoard,depth-1),val);
+            val = std::min(evalHelpMinimax(newBoard, depth-1, move.isQuiet()),val);
         }
 
     }
 
     return val;
 }
-int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
+int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool isQuiet, bool isQuiescence){
 
     // std::cout << depth << std::endl;
     /*int val;
@@ -338,9 +346,10 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
     return this->transpositionTable_.at(board.key()).val;*/
 
     //board.printBoard();
-
-    if(gMoveGenerator.getMoves(board).empty() || depth <= 0){
-        if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
+    if(isQuiescence && isQuiet) return this->evalBoard(board);
+    else if(gMoveGenerator.getMoves(board).empty()) return this->evalBoard(board);
+    else if(depth == 0){
+        if(this->doQuiescence_) return this->evalHelpAB(board, kQuiescenceDepth, -2147483647, 2147483647, isQuiet, true);
         else return this->evalBoard(board);
     }
 
@@ -349,10 +358,10 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
         val = -2147483647;
 
-        for(ChessMove move : gMoveGenerator.getMoves(board)){
+        for(ChessMove move : gMoveGenerator.getMoves(board, !doQuiescence_)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
-            val = std::max(evalHelpAB(newBoard, depth-1, alpha, beta), val);
+            val = std::max(evalHelpAB(newBoard, depth-1, alpha, beta, move.isQuiet(), isQuiescence), val);
             alpha = std::max(alpha, val);
             if(val >= beta) break;
         }
@@ -361,10 +370,10 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
         val = 2147483647;
 
-        for(ChessMove move : gMoveGenerator.getMoves(board)){
+        for(ChessMove move : gMoveGenerator.getMoves(board, !doQuiescence_)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
-            val = std::min(evalHelpAB(newBoard, depth-1, alpha, beta), val);
+            val = std::min(evalHelpAB(newBoard, depth-1, alpha, beta, move.isQuiet(), isQuiescence), val);
             beta = std::min(val, beta);
             if(val <= alpha) break;
         }
@@ -373,27 +382,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     return val;
 }
-int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
-    int stand_pat = this->evalBoard(board);
 
-    if(stand_pat >= beta) return beta;
-    if (alpha < stand_pat) alpha = stand_pat;
-
-    int score;
-
-    for(ChessMove move : gMoveGenerator.getMoves(board)){
-        if(move.isCapturing()){
-            ChessBoard newBoard(board);
-            newBoard.doMove(move);
-            score = -this->evalHelpQuiescence(newBoard, -beta, -alpha);
-
-            if(score >= beta) return beta;
-            if(score > alpha) return alpha;
-        }
-    }
-
-    return alpha;
-}
 
 Minimax::Minimax(int(*heuristicFunc)(ChessBoard&, Player), int depth, bool doABPruning, bool doQuiescence) : ChessAI("Minimax"){
     this->heuristicFunc_ = heuristicFunc;
@@ -427,8 +416,8 @@ ChessMove Minimax::findOptimalMove(ChessBoard &board){
         //else score = evalHelpMinimax(child, this->depth_, board.player());
         ChessBoard newBoard(board);
         newBoard.doMove(move);
-        if(this->doABPruining_) score = evalHelpAB(newBoard, this->depth_ - 1, -2147483647, 2147483647);
-        else score = this->evalHelpMinimax(newBoard, this->depth_ - 1);
+        if(this->doABPruining_) score = evalHelpAB(newBoard, this->depth_ - 1, -2147483647, 2147483647, move.isQuiet(), false);
+        else score = this->evalHelpMinimax(newBoard, this->depth_ - 1, move.isQuiet());
 
         // child.printBoard();
         // std::cout << score << std::endl;

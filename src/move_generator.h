@@ -57,7 +57,7 @@ class MoveGenerator {
     // }
 
     void genPseudoLegalMoves(vector<ChessMove> &moves) const;
-    void genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves);
+    void genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves, bool incQuiet);
     void genKingMoves(vector<ChessMove> &moves) const;
     void genPawnMoves(vector<ChessMove> &moves) const;
     void genKnightMoves(vector<ChessMove> &moves) const;
@@ -81,8 +81,8 @@ class MoveGenerator {
     bool hasLost();
     bool hasLost(ChessBoard &board);
 
-    vector<ChessMove> getMoves();
-    vector<ChessMove> getMoves(ChessBoard &board);
+    vector<ChessMove> getMoves(bool incQuiet = true);
+    vector<ChessMove> getMoves(ChessBoard &board, bool incQuiet = true);
     // const vector<ChessMove> &getMoves() const;
     // const vector<ChessMove> &getMoves(ChessBoard &board);
 

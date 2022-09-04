@@ -33,9 +33,8 @@ class Minimax : public ChessAI{
 
     int evalBoard(ChessBoard &board);
 
-    int evalHelpMinimax(ChessBoard &board, int depth);
-    int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta);
-    int evalHelpQuiescence(ChessBoard &board, int alpha, int beta);
+    int evalHelpMinimax(ChessBoard &board, int depth, bool isQuiet);
+    int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool isQuiet, bool isQuiesence);
 
     public:
     

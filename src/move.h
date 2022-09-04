@@ -35,6 +35,10 @@ struct ChessMove {
     inline bool isPromoting() const {
         return this->moveData >= kMoveFlagPromotingToQueen;
     }
+    inline bool isQuiet() const {
+        //TODO: Make this more in depth
+        return !(this->isCapturing() || this->isPromoting());
+    }
 
     PieceType promotionType() const;
     bool isValid() const;

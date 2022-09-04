@@ -28,15 +28,18 @@ bool MoveGenerator::enPassantCheck(ChessMove &move) const {
 }
 
 void MoveGenerator::genPseudoLegalMoves(vector<ChessMove> &moves) const {
-    this->genKingMoves(moves);
     this->genPawnMoves(moves);
-    this->genKnightMoves(moves);
     this->genSlidingMoves(moves);
+    this->genKnightMoves(moves);
+    this->genKingMoves(moves);
+
+
 }
-void MoveGenerator::genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves) {
+void MoveGenerator::genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves, bool incQuiet) {
     //ChessBoard board(*this->board_);
     //for(ChessMove move : moves) std::cout << move.str() << std::endl;
     for(ChessMove &move : moves){
+        if(!incQuiet && move.isQuiet()) continue;
         ChessBoard newBoard(*this->board_);
         newBoard.doMove(move, false);
         //std::cout << move.str() << std::endl;
@@ -303,17 +306,17 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
     return this->hasLost();
 }
 
-vector<ChessMove> MoveGenerator::getMoves() {
+vector<ChessMove> MoveGenerator::getMoves(bool incQuiet) {
     vector<ChessMove> pseudoLegalMoves, legalMoves;
     pseudoLegalMoves.reserve(kMaxMoveNum);
     this->genPseudoLegalMoves(pseudoLegalMoves);
     legalMoves.reserve(pseudoLegalMoves.size());
-    this->genLegalMoves(legalMoves, pseudoLegalMoves);
+    this->genLegalMoves(legalMoves, pseudoLegalMoves, incQuiet);
     return legalMoves;
 }
-vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board) {
+vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board, bool incQuiet) {
     this->setBoard(board);
-    return this->getMoves();
+    return this->getMoves(incQuiet);
 }
 
 void MoveGenerator::setBoard(ChessBoard &board) {

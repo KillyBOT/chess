@@ -10,14 +10,14 @@
 using std::pair;
 using std::vector;
 
-static const int kLossPenalty = 100000;
+static const int kLossPenalty = 10000000;
 static const int kCheckPenalty = 1000;
 static const int kMaterialCoefficient = 1;
 static const int kAttackedCoefficient = 10;
 static const int kPinnedCoefficient = 10;
 static const int kPositionCoefficient = 1;
 
-static const int kQuiescenceDepth = 10;
+static const int kQuiescenceDepth = 4;
 
 static const int kPawnTableWhite[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -248,7 +248,7 @@ TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
 }
 
 int Minimax::evalBoard(ChessBoard &board){
-    return this->heuristicFunc_(board, this->maxPlayer_);
+    //return this->heuristicFunc_(board, this->maxPlayer_);
     if(!this->boardScores_.count(board.key())) {
         int boardEval = this->heuristicFunc_(board, this->maxPlayer_);
         this->boardScores_.emplace(board.key(), this->heuristicFunc_(board, this->maxPlayer_));
@@ -346,10 +346,13 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool 
     return this->transpositionTable_.at(board.key()).val;*/
 
     //board.printBoard();
+
+    if(!isQuiescence && this->transpositionTable_.count(board.key()) && this->transpositionTable_.at(board.key()).depth > depth) return this->transpositionTable_.at(board.key()).val;
+
     if(isQuiescence && isQuiet) return this->evalBoard(board);
     else if(gMoveGenerator.getMoves(board).empty()) return this->evalBoard(board);
     else if(depth == 0){
-        if(this->doQuiescence_) return this->evalHelpAB(board, kQuiescenceDepth, -2147483647, 2147483647, isQuiet, true);
+        if(this->doQuiescence_) return this->evalHelpAB(board, kQuiescenceDepth, alpha, beta, isQuiet, true);
         else return this->evalBoard(board);
     }
 
@@ -358,7 +361,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool 
 
         val = -2147483647;
 
-        for(ChessMove move : gMoveGenerator.getMoves(board, !doQuiescence_)){
+        for(ChessMove move : gMoveGenerator.getMoves(board, !isQuiescence, true)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
             val = std::max(evalHelpAB(newBoard, depth-1, alpha, beta, move.isQuiet(), isQuiescence), val);
@@ -370,7 +373,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool 
 
         val = 2147483647;
 
-        for(ChessMove move : gMoveGenerator.getMoves(board, !doQuiescence_)){
+        for(ChessMove move : gMoveGenerator.getMoves(board, !isQuiescence, true)){
             ChessBoard newBoard(board);
             newBoard.doMove(move);
             val = std::min(evalHelpAB(newBoard, depth-1, alpha, beta, move.isQuiet(), isQuiescence), val);
@@ -379,6 +382,8 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool 
         }
 
     }
+
+    if(!isQuiescence) this->transpositionTable_.emplace(board.key(), TranspositionTableEntry(val, depth));
 
     return val;
 }

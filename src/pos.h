@@ -14,7 +14,7 @@ ChessPos new_pos(std::string str);
 inline bool pos_in_bounds(ChessPos pos){
     return pos >= 0 && pos < 64;
 }
-inline char pos_rank(ChessPos pos){
+inline char pos_rank(ChessPos pos) {
     return pos >> 3;
 }
 inline char pos_file(ChessPos pos) {

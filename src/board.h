@@ -59,8 +59,8 @@ class ChessBoard {
     U64 occupied[16];
     U64 totalOccupied;
 
-    ChessBoard(bool initBoard = true, bool useZobristKey = false);
-    ChessBoard(std::string fenStr, bool useZobristKey = false);
+    ChessBoard(bool initBoard = true, bool useZobristKey = true);
+    ChessBoard(std::string fenStr, bool useZobristKey = true);
     //ChessBoard(const ChessBoard &board);
 
     inline Player player() const {

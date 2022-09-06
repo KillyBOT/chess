@@ -116,8 +116,8 @@ int main()
     //cout << std::hex << find_magic(0, kMagicBishopIndBits[0], true) << endl;
     //create_magic_databases();
 
-    MCTS mcts = MCTS();
-    Minimax minimax = Minimax(heuristic_basic, 5, true, false);
+    MCTS mcts = MCTS(500, 50);
+    Minimax minimax = Minimax(heuristic_complex, 5);
 
     mg.setBoard(board);
     srand(time(NULL));

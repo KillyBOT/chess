@@ -41,6 +41,13 @@ PieceType ChessMove::promotionType() const {
 bool ChessMove::isValid() const {
     return pos_in_bounds(newPos) && this->oldPos != this->newPos;
 }
+int ChessMove::score() const {
+    int score = 0;
+    if(this->isCapturing()) score += kPieceValue[piece_type(this->captured)];
+    if(this->isPromoting()) score += kPieceValue[piece_type(this->promotionType())];
+
+    return score;
+}
 std::string ChessMove::str() const {
     std::string str;
     if(this->moveData == kMoveFlagIsCastling){
@@ -71,4 +78,8 @@ std::string ChessMove::strUCI() const {
 }
 bool ChessMove::isCastlingKingside() const {
     return pos_file_char(this->newPos) == 'g';
+}
+
+bool compareChessMoves(ChessMove a, ChessMove b){
+    return a.score() > b.score();
 }

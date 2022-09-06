@@ -81,8 +81,8 @@ class MoveGenerator {
     bool hasLost();
     bool hasLost(ChessBoard &board);
 
-    vector<ChessMove> getMoves(bool incQuiet = true);
-    vector<ChessMove> getMoves(ChessBoard &board, bool incQuiet = true);
+    vector<ChessMove> getMoves(bool incQuiet = true, bool orderMoves = false);
+    vector<ChessMove> getMoves(ChessBoard &board, bool incQuiet = true, bool orderMoves = false);
     // const vector<ChessMove> &getMoves() const;
     // const vector<ChessMove> &getMoves(ChessBoard &board);
 

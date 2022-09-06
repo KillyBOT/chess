@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <bits/stdc++.h>
 
 #include "ray.h"
 #include "bitboard.h"
@@ -306,17 +307,22 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
     return this->hasLost();
 }
 
-vector<ChessMove> MoveGenerator::getMoves(bool incQuiet) {
+vector<ChessMove> MoveGenerator::getMoves(bool incQuiet, bool orderMoves) {
     vector<ChessMove> pseudoLegalMoves, legalMoves;
+    
     pseudoLegalMoves.reserve(kMaxMoveNum);
     this->genPseudoLegalMoves(pseudoLegalMoves);
+
     legalMoves.reserve(pseudoLegalMoves.size());
     this->genLegalMoves(legalMoves, pseudoLegalMoves, incQuiet);
+
+    if(orderMoves) std::sort(legalMoves.begin(), legalMoves.end(), compareChessMoves);
+
     return legalMoves;
 }
-vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board, bool incQuiet) {
+vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board, bool incQuiet, bool orderMoves) {
     this->setBoard(board);
-    return this->getMoves(incQuiet);
+    return this->getMoves(incQuiet, orderMoves);
 }
 
 void MoveGenerator::setBoard(ChessBoard &board) {

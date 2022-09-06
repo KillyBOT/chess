@@ -43,9 +43,12 @@ struct ChessMove {
     PieceType promotionType() const;
     bool isValid() const;
     bool isCastlingKingside() const;
+    int score() const;
     std::string str() const;
     std::string strUCI() const;
 
 };
+
+bool compareChessMoves(ChessMove a, ChessMove b);
 
 #endif

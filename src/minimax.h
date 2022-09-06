@@ -6,8 +6,8 @@
 #include "chess_ai.h"
 #include "board.h"
 
-int heuristic_basic(ChessBoard &board, Player maxPlayer);
-int heuristic_complex(ChessBoard &board, Player maxPlayer);
+int heuristic_basic(ChessBoard &board);
+int heuristic_complex(ChessBoard &board);
 
 using std::unordered_map;
 using std::pair;
@@ -25,20 +25,21 @@ class Minimax : public ChessAI{
     unordered_map<size_t,int> boardScores_;
     unordered_map<size_t, TranspositionTableEntry> transpositionTable_;
 
-    int depth_;
-    bool doABPruining_;
+    int searchTime_;
+    bool doABPruning_;
     bool doQuiescence_;
     Player maxPlayer_;
-    int (*heuristicFunc_)(ChessBoard&, Player);
+    int (*heuristicFunc_)(ChessBoard&);
 
     int evalBoard(ChessBoard &board);
 
     int evalHelpMinimax(ChessBoard &board, int depth, bool isQuiet);
-    int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta, bool isQuiet, bool isQuiesence);
+    int evalHelpAB(ChessBoard &board, int depth, int alpha, int beta);
+    int evalHelpQuiescence(ChessBoard &board, int alpha, int beta);
 
     public:
     
-    Minimax(int(*heuristicFunc)(ChessBoard&, Player) = heuristic_complex, int depth = 5, bool doABPruning = true, bool doQuiescence = true);
+    Minimax(int(*heuristicFunc)(ChessBoard&) = heuristic_complex, int searchTime = 4096, bool doABPruning = true, bool doQuiescence = true);
     ChessMove findOptimalMove(ChessBoard &board);
 
     bool setABPruning();

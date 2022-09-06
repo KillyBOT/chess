@@ -117,7 +117,7 @@ int main()
     //create_magic_databases();
 
     MCTS mcts = MCTS(500, 50);
-    Minimax minimax = Minimax(heuristic_complex, 5);
+    Minimax minimax = Minimax(heuristic_complex, 4096, true, false);
 
     mg.setBoard(board);
     srand(time(NULL));
@@ -128,10 +128,11 @@ int main()
         //mg.printForced();
 
         //board.doMove(mcts.findOptimalMove(board));
+
         board.doMove(minimax.findOptimalMove(board));
         board.printBoard();
-
         mg.setBoard(board);
+
         if(mg.hasLost() || mg.stalemate()) break;
 
         const vector<ChessMove> &moves = mg.getMoves(board);

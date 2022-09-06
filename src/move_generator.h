@@ -83,6 +83,9 @@ class MoveGenerator {
 
     vector<ChessMove> getMoves(bool incQuiet = true, bool orderMoves = false);
     vector<ChessMove> getMoves(ChessBoard &board, bool incQuiet = true, bool orderMoves = false);
+    
+    bool isNodeQuiet();
+    bool isNodeQuiet(ChessBoard &board);
     // const vector<ChessMove> &getMoves() const;
     // const vector<ChessMove> &getMoves(ChessBoard &board);
 

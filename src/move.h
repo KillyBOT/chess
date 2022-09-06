@@ -37,7 +37,7 @@ struct ChessMove {
     }
     inline bool isQuiet() const {
         //TODO: Make this more in depth
-        return !(this->isCapturing() || this->isPromoting());
+        return !this->isCapturing() && !this->isPromoting();
     }
 
     PieceType promotionType() const;

@@ -309,7 +309,7 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
 
 vector<ChessMove> MoveGenerator::getMoves(bool incQuiet, bool orderMoves) {
     vector<ChessMove> pseudoLegalMoves, legalMoves;
-    
+
     pseudoLegalMoves.reserve(kMaxMoveNum);
     this->genPseudoLegalMoves(pseudoLegalMoves);
 
@@ -323,6 +323,18 @@ vector<ChessMove> MoveGenerator::getMoves(bool incQuiet, bool orderMoves) {
 vector<ChessMove> MoveGenerator::getMoves(ChessBoard &board, bool incQuiet, bool orderMoves) {
     this->setBoard(board);
     return this->getMoves(incQuiet, orderMoves);
+}
+
+bool MoveGenerator::isNodeQuiet(){
+    vector<ChessMove> moves = this->getMoves();
+    for(ChessMove &move : moves){
+        if(!move.isQuiet()) return false;
+    }
+    return true;
+}
+bool MoveGenerator::isNodeQuiet(ChessBoard &board){
+    this->setBoard(board);
+    return this->isNodeQuiet();
 }
 
 void MoveGenerator::setBoard(ChessBoard &board) {

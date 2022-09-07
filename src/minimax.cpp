@@ -16,9 +16,6 @@ static const int kMaterialCoefficient = 1;
 static const int kAttackedCoefficient = 10;
 static const int kPinnedCoefficient = 10;
 static const int kPositionCoefficient = 1;
-
-static const int kQuiescenceDepth = 4;
-
 static const int kPawnTableWhite[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     5, 10, 10, -20, -20, 10, 10, 5,
@@ -130,6 +127,8 @@ static const int kKingTableBlack[64] = {
     -30, -40, -40, -50, -50, -40, -40, -30
 };
 
+static TranspositionTableEntry invalidEntry = TranspositionTableEntry();
+
 //Only checks how much material you have, and of course if you've won or not
 int heuristic_basic(ChessBoard &board) {
 
@@ -237,11 +236,38 @@ int heuristic_complex(ChessBoard &board){
     return score;
 }
 
-TranspositionTableEntry::TranspositionTableEntry(ChessMove bestMove, int val, int depth){
+TranspositionTableEntry::TranspositionTableEntry(ChessMove bestMove, int val, int depth, int entryType){
     this->bestMove = bestMove;
     this->val = val;
     this->depth = depth;
+    this->entryType = entryType;
+
+    this->isValid = false;
 }
+
+TranspositionTable::TranspositionTable(){
+}
+
+    TranspositionTableEntry TranspositionTable::getTTEntry(ChessBoard &board, int depth, int alpha, int beta) const {
+        if(this->tt_.count(board.key())){
+            TranspositionTableEntry entry = this->tt_.at(board.key());
+            if(entry.depth >= depth){
+                if(entry.entryType == kExactEntry) return entry;
+                else if(entry.entryType == kUpperEntry && entry.val <= alpha) return entry;
+                else if(entry.entryType == kLowerEntry && entry.val >= beta ) return entry;
+            }
+        }
+        return invalidEntry;
+    }
+    int TranspositionTable::size() const {
+        return tt_.size();
+    }
+
+    void TranspositionTable::addTTEntry(ChessBoard &board, ChessMove bestMove, int val, int depth, int entryType){
+        TranspositionTableEntry entry = TranspositionTableEntry(bestMove, val, depth, entryType);
+        entry.isValid = true;
+        this->tt_[board.key()] = entry;
+    }
 
 int Minimax::evalBoard(ChessBoard &board){
     //return this->heuristicFunc_(board, this->maxPlayer_);
@@ -331,7 +357,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     // return val;
 
-    if(this->transpositionTable_.count(board.key()) && this->transpositionTable_.at(board.key()).depth >= depth) return this->transpositionTable_.at(board.key()).val;
+    if(this->tt_.getTTEntry(board, depth, alpha, beta).isValid) return this->tt_.getTTEntry(board, depth, alpha, beta).val;
 
     if(depth == 0){
         if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
@@ -343,6 +369,7 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     ChessMove bestMove;
 
+    int evalType = kUpperEntry;
     for(ChessMove move : moves){
         ChessBoard newBoard(board);
         newBoard.doMove(move);
@@ -350,16 +377,17 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
         int eval = -evalHelpAB(newBoard, depth - 1, -beta, -alpha);
 
         if(eval >= beta) {
-            this->transpositionTable_[board.key()] = TranspositionTableEntry(move, beta, depth);
+            this->tt_.addTTEntry(board, move, beta, depth, kLowerEntry);
             return beta;
         }
 
         if(eval > alpha) {
+            evalType = kExactEntry;
             bestMove = move;
             alpha = eval;
         }
     }
-    this->transpositionTable_[board.key()] = TranspositionTableEntry(bestMove, alpha, depth);
+    this->tt_.addTTEntry(board, bestMove, alpha, depth, evalType);
     
     return alpha;
 
@@ -418,7 +446,7 @@ ChessMove Minimax::findOptimalMove(ChessBoard &board){
         auto checkStartTime = std::chrono::steady_clock::now();
 
         bestEval = evalHelpAB(board, maxDepth, -2147483647, 2147483647);
-        bestMove = this->transpositionTable_.at(board.key()).bestMove;
+        bestMove = this->tt_.getTTEntry(board, 0, 2147483647, -2147483647).bestMove;
 
         ChessBoard newBoard(board);
         newBoard.doMove(bestMove);

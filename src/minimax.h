@@ -9,22 +9,38 @@
 int heuristic_basic(ChessBoard &board);
 int heuristic_complex(ChessBoard &board);
 
+const int kExactEntry = 0;
+const int kLowerEntry = 1;
+const int kUpperEntry = 2;
+
 using std::unordered_map;
 using std::pair;
 using std::vector;
 
 struct TranspositionTableEntry {
-    int val;
-    int depth;
+    int val, depth, entryType;
+    bool isValid;
     ChessMove bestMove;
 
-    TranspositionTableEntry(ChessMove bestMove = ChessMove(), int val = 0, int depth = 0);
+    TranspositionTableEntry(ChessMove bestMove = ChessMove(), int val = 0, int depth = 0, int entryType = kExactEntry);
+};
+
+class TranspositionTable {
+    unordered_map<size_t, TranspositionTableEntry> tt_;
+
+    public:
+    TranspositionTable();
+
+    TranspositionTableEntry getTTEntry(ChessBoard &board, int depth, int alpha, int beta) const;
+    int size() const;
+
+    void addTTEntry(ChessBoard &board, ChessMove bestMove = ChessMove(), int val = 0, int depth = 0, int entryType = kExactEntry);
 };
 
 class Minimax : public ChessAI{
 
     unordered_map<size_t,int> boardScores_;
-    unordered_map<size_t, TranspositionTableEntry> transpositionTable_;
+    TranspositionTable tt_;
 
     int searchTime_;
     bool doABPruning_;

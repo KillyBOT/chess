@@ -39,7 +39,7 @@ void MoveGenerator::genPseudoLegalMoves(vector<ChessMove> &moves) const {
 void MoveGenerator::genLegalMoves(vector<ChessMove> &legalMoves, vector<ChessMove> &moves, bool incQuiet) {
     //ChessBoard board(*this->board_);
     //for(ChessMove move : moves) std::cout << move.str() << std::endl;
-    for(ChessMove &move : moves){
+    for(ChessMove move : moves){
         if(!incQuiet && move.isQuiet()) continue;
         ChessBoard newBoard(*this->board_);
         newBoard.doMove(move, false);
@@ -307,6 +307,18 @@ bool MoveGenerator::hasLost(ChessBoard &board) {
     return this->hasLost();
 }
 
+bool MoveGenerator::hasWon() {
+    ChessBoard newBoard(*this->board_);
+    newBoard.flipPlayer();
+    MoveGenerator mg;
+    mg.setBoard(newBoard);
+    return mg.hasLost(newBoard);
+}
+bool MoveGenerator::hasWon(ChessBoard &board) {
+    this->setBoard(board);
+    return this->hasWon();
+}
+
 vector<ChessMove> MoveGenerator::getMoves(bool incQuiet, bool orderMoves) {
     vector<ChessMove> pseudoLegalMoves, legalMoves;
 
@@ -350,7 +362,7 @@ void MoveGenerator::setBoard(ChessBoard &board) {
         this->validPositions_ |= board.occupied[kPieceListInd[this->player_][type]];
         this->opponentOccupied_ |= board.occupied[kPieceListInd[this->opponent_][type]];
     }
-    //this->validPositions_ |= board.kingPos(this->opponent_);
+    this->validPositions_ |= kPosMasks[board.kingPos(this->opponent_)];
     this->validPositions_ = ~this->validPositions_;
     this->occupied_ = this->board_->totalOccupied;
     //this->setAttacked(this->board_);

@@ -16,8 +16,9 @@ using std::vector;
 struct TranspositionTableEntry {
     int val;
     int depth;
+    ChessMove bestMove;
 
-    TranspositionTableEntry(int val = 0, int depth = 0);
+    TranspositionTableEntry(ChessMove bestMove = ChessMove(), int val = 0, int depth = 0);
 };
 
 class Minimax : public ChessAI{

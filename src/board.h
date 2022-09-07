@@ -67,7 +67,7 @@ class ChessBoard {
         return this->blackToMove_ ? kPlayerBlack : kPlayerWhite;
     }
     inline Player opponent() const {
-        return this->player() == kPlayerWhite ? kPlayerBlack : kPlayerWhite;
+        return player_opponent(this->player());
     }
     inline const ChessPiece &piece(ChessPos pos) const {
         return this->pieces_[pos];
@@ -113,6 +113,10 @@ class ChessBoard {
     void printBoard() const;
     void printMoves() const;
     void printPieces() const;
+
+    void flipPlayer() {
+        this->blackToMove_ = !this->blackToMove_;
+    }
 
     //WARNING: if it's an invalid position, it will not work!
     void addPiece(ChessPos pos, ChessPiece piece);

@@ -78,31 +78,31 @@ int main()
     init_zobrist_nums();
     init_magic_databases();
 
-    MoveGenerator mg;
-
     srand(time(nullptr));
 
     // ChessBoard board(false);
-    // board.addPiece(new_pos("a1"),new_piece(kPieceKing,  kPlayerWhite));
-    // board.addPiece(new_pos("h8"),new_piece(kPieceKing, kPlayerBlack));
+    // board.addPiece(new_pos("a8"),new_piece(kPieceKing,  kPlayerWhite));
+    // board.addPiece(new_pos("h1"),new_piece(kPieceKing, kPlayerBlack));
     // //board.addPiece(new_pos("e7"),new_piece(kPieceBishop, kPlayerBlack));
     // //board.addPiece(new_pos("b6"),new_piece(kPiecePawn, kPlayerWhite));
     // //board.addPiece(new_pos("f5"),new_piece(kPiecePawn, kPlayerWhite));
-    // board.addPiece(new_pos("h4"),new_piece(kPieceRook, kPlayerBlack));
-    // board.addPiece(new_pos("f4"),new_piece(kPiecePawn, kPlayerWhite));
+    // board.addPiece(new_pos("a1"),new_piece(kPieceRook, kPlayerWhite));
+    // board.addPiece(new_pos("a2"),new_piece(kPiecePawn, kPlayerWhite));
     // //board.addPiece(new_pos("b4"),new_piece(kPiecePawn, kPlayerWhite));
     // //board.addPiece(new_pos("d2"),new_piece(kPiecePawn, kPlayerWhite));
     // //board.addPiece(new_pos("d7"),new_piece(kPiecePawn, kPlayerWhite));
 
     // board.printBoard();
-    // mg.setBoard(board);
-    // mg.printAttacked();
+    // gMoveGenerator.setBoard(board);
+    // gMoveGenerator.printAttacked();
+
+    // for(ChessMove move : gMoveGenerator.getMoves()) cout << move.str() << endl;
 
     ChessBoard board;
     // board.fromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
-    // board.fromFen("rnbqkbnr/1ppppppp/p7/8/Q7/2P5/PP1PPPPP/RNB1KBNR b KQkq - 0 1");
+    // // board.fromFen("rnbqkbnr/1ppppppp/p7/8/Q7/2P5/PP1PPPPP/RNB1KBNR b KQkq - 0 1");
     
-    board.printBoard();
+    // board.printBoard();
     // perft(board, 6);
 
     // for(int i = 1; i < 7; i++){
@@ -117,31 +117,31 @@ int main()
     //create_magic_databases();
 
     MCTS mcts = MCTS(500, 50);
-    Minimax minimax = Minimax(heuristic_complex, 4096, true, false);
+    Minimax minimax = Minimax(heuristic_complex, 4096);
 
-    mg.setBoard(board);
+    gMoveGenerator.setBoard(board);
     srand(time(NULL));
     board.printBoard();
 
-    while(!mg.hasLost() && !mg.stalemate()){
-        //mg.printAttacked();
-        //mg.printForced();
+    while(!gMoveGenerator.hasLost() && !gMoveGenerator.stalemate()){
+        //gMoveGenerator.printAttacked();
+        //gMoveGenerator.printForced();
 
         //board.doMove(mcts.findOptimalMove(board));
 
         board.doMove(minimax.findOptimalMove(board));
         board.printBoard();
-        mg.setBoard(board);
+        gMoveGenerator.setBoard(board);
 
-        if(mg.hasLost() || mg.stalemate()) break;
+        if(gMoveGenerator.hasLost() || gMoveGenerator.stalemate()) break;
 
-        const vector<ChessMove> &moves = mg.getMoves(board);
+        const vector<ChessMove> &moves = gMoveGenerator.getMoves(board);
         board.doMove(moves[rand() % moves.size()]);
         board.printBoard();
-        mg.setBoard(board);
+        gMoveGenerator.setBoard(board);
     }
     board.printBoard();
-    if(mg.stalemate()) cout << "Stalemate!" << endl;
+    if(gMoveGenerator.stalemate()) cout << "Stalemate!" << endl;
     else{
         if(board.player() == kPlayerWhite) cout << "Black wins!" << endl;
         else cout << "White wins!" << endl;

@@ -3,6 +3,8 @@
 
 #include "move.h"
 
+static const int kCaptureMaterialCoefficient = 5;
+
 ChessMove::ChessMove(){
     this->piece = 0;
     this->captured = 0;
@@ -43,8 +45,9 @@ bool ChessMove::isValid() const {
 }
 int ChessMove::score() const {
     int score = 0;
-    if(this->isCapturing()) score += kPieceValue[piece_type(this->captured)];
+    if(this->isCapturing()) score += kPieceValue[piece_type(this->captured)] * kCaptureMaterialCoefficient - kPieceValue[piece_type(this->piece)];
     if(this->isPromoting()) score += kPieceValue[piece_type(this->promotionType())];
+    //score += kPieceValue[piece_type(this->piece)];
 
     return score;
 }

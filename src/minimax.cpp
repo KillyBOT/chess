@@ -10,8 +10,8 @@
 using std::pair;
 using std::vector;
 
-static const int kLossPenalty = 10000000;
-static const int kCheckPenalty = 1000;
+static const int kLossPenalty = 100000000;
+static const int kCheckPenalty = 100000;
 static const int kMaterialCoefficient = 1;
 static const int kAttackedCoefficient = 10;
 static const int kPinnedCoefficient = 10;
@@ -134,9 +134,10 @@ static const int kKingTableBlack[64] = {
 int heuristic_basic(ChessBoard &board) {
 
     int score = 0;
-
-    if(gMoveGenerator.hasLost(board)) score -= kLossPenalty;
-    else if(board.inCheck(board.player())) score -= kCheckPenalty;
+    if(gMoveGenerator.hasWon(board)) score += kLossPenalty;
+    else if(gMoveGenerator.hasLost(board)) score -= kLossPenalty;
+    // else if(board.inCheck(board.player())) score -= kCheckPenalty;
+    // else if(board.inCheck(board.opponent())) score += kCheckPenalty;
     
     score += (board.playerScore(board.player()) - board.playerScore(board.opponent())) * kMaterialCoefficient;
 
@@ -153,10 +154,10 @@ int heuristic_basic(ChessBoard &board) {
 int heuristic_complex(ChessBoard &board){
     int score = 0;
 
-    if(gMoveGenerator.hasLost(board)) score -= kLossPenalty;
-    else if(board.inCheck(board.player())) score -= kCheckPenalty;
-    
-    if(board.inCheck(board.opponent())) score += kCheckPenalty;
+    if(gMoveGenerator.hasWon(board)) score += kLossPenalty;
+    else if(gMoveGenerator.hasLost(board)) score -= kLossPenalty;
+    // else if(board.inCheck(board.player())) score -= kCheckPenalty;
+    // else if(board.inCheck(board.opponent())) score += kCheckPenalty;
     
     score += (board.playerScore(board.player()) - board.playerScore(board.opponent())) * kMaterialCoefficient;
 
@@ -236,7 +237,8 @@ int heuristic_complex(ChessBoard &board){
     return score;
 }
 
-TranspositionTableEntry::TranspositionTableEntry(int val, int depth){
+TranspositionTableEntry::TranspositionTableEntry(ChessMove bestMove, int val, int depth){
+    this->bestMove = bestMove;
     this->val = val;
     this->depth = depth;
 }
@@ -331,13 +333,15 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
 
     if(this->transpositionTable_.count(board.key()) && this->transpositionTable_.at(board.key()).depth >= depth) return this->transpositionTable_.at(board.key()).val;
 
-    if(depth <= 0){
+    if(depth == 0){
         if(this->doQuiescence_) return this->evalHelpQuiescence(board, alpha, beta);
         else return this->evalBoard(board);
     }
 
     vector<ChessMove> moves = gMoveGenerator.getMoves(board, true, true);
     if(moves.empty()) return this->evalBoard(board);
+
+    ChessMove bestMove;
 
     for(ChessMove move : moves){
         ChessBoard newBoard(board);
@@ -346,14 +350,16 @@ int Minimax::evalHelpAB(ChessBoard &board, int depth, int alpha, int beta){
         int eval = -evalHelpAB(newBoard, depth - 1, -beta, -alpha);
 
         if(eval >= beta) {
-            this->transpositionTable_.emplace(board.key(), TranspositionTableEntry(beta, depth));
+            this->transpositionTable_[board.key()] = TranspositionTableEntry(move, beta, depth);
             return beta;
         }
 
-        if(eval > alpha) alpha = eval;
+        if(eval > alpha) {
+            bestMove = move;
+            alpha = eval;
+        }
     }
-
-    this->transpositionTable_.emplace(board.key(), TranspositionTableEntry(alpha, depth));
+    this->transpositionTable_[board.key()] = TranspositionTableEntry(bestMove, alpha, depth);
     
     return alpha;
 
@@ -364,7 +370,7 @@ int Minimax::evalHelpQuiescence(ChessBoard &board, int alpha, int beta){
     if(eval >= beta) return beta;
     if(eval > alpha) alpha = eval;
 
-    vector<ChessMove> moves = gMoveGenerator.getMoves(board, false);
+    vector<ChessMove> moves = gMoveGenerator.getMoves(board, false, true);
 
     for(ChessMove move : moves){
         ChessBoard newBoard(board);
@@ -393,7 +399,8 @@ ChessMove Minimax::findOptimalMove(ChessBoard &board){
     using std::chrono::system_clock;
 
     int score;
-    int bestScore = -2147483647;
+    int bestScore = 0;
+    int bestEval;
     ChessMove bestMove;
     this->maxPlayer_ = board.player();
 
@@ -408,26 +415,31 @@ ChessMove Minimax::findOptimalMove(ChessBoard &board){
     
     while(doIDDFS){
 
-        std::cout << maxDepth << std::endl;
-
-        bestScore = -2147483647;
         auto checkStartTime = std::chrono::steady_clock::now();
 
-        for(ChessMove move : moves){
-            ChessBoard newBoard(board);
-            newBoard.doMove(move);
+        bestEval = evalHelpAB(board, maxDepth, -2147483647, 2147483647);
+        bestMove = this->transpositionTable_.at(board.key()).bestMove;
 
-            if(this->doABPruning_) score = evalHelpAB(newBoard, maxDepth, -2147483647, 2147483647);
-            else score = evalHelpMinimax(newBoard, maxDepth, move.isQuiet());
+        ChessBoard newBoard(board);
+        newBoard.doMove(bestMove);
+        if(gMoveGenerator.hasLost(newBoard)) doIDDFS = false;
+        // for(ChessMove move : moves){
+        //     ChessBoard newBoard(board);
+        //     newBoard.doMove(move);
 
-            if(score > bestScore){
-                bestScore = score;
-                bestMove = move;
-            }
-        }
+        //     if(this->doABPruning_) score = evalHelpAB(newBoard, maxDepth, -2147483647, 2147483647);
+        //     else score = evalHelpMinimax(newBoard, maxDepth, move.isQuiet());
+
+        //     if(score > bestScore){
+        //         bestScore = score;
+        //         bestMove = move;
+        //     }
+        // }
 
         auto checkEndTime = std::chrono::steady_clock::now();
         std::chrono::duration<double> checkElapsed = checkEndTime - checkStartTime;
+
+        std::cout << maxDepth << '\t' << bestMove.strUCI() << '\t' << bestEval << std::endl;
 
         maxDepth++;
 

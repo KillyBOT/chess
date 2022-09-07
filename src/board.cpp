@@ -546,9 +546,10 @@ void ChessBoard::doMove(ChessMove move, bool update) {
     if(update){
         this->blackToMove_ = !this->blackToMove_;
         this->moveNum_++;
-        if(this->useZobristKey_) this->setKey(move);
-        else this->setData(move);
     }
+
+    if(this->useZobristKey_) this->setKey(move);
+    else this->setData(move);
 
     //if(move.isEnPassant()) this->printBoard();
 

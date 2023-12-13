@@ -207,6 +207,8 @@ inline Square RemoveLSBFromBitboard(Bitboard& bb) {
 void InitBitboards();
 // Return a bitboard as a string
 std::string BitboardString(Bitboard bb);
+// Generate a magic number for a specific square and piece type
+u64 GenerateMagic(Square src, PieceType pt);
 
 } // namespace ChessAI
 

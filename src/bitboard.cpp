@@ -237,91 +237,61 @@ void InitBitboards() {
 
 }
 
-// u64 GenerateMagic(Square src, PieceType pt)
-// {
-//     assert((pt == kBishop || pt == kRook) && ValidSquare(src));
+u64 GenerateMagic(Square src, PieceType pt)
+{
+    assert((pt == kBishop || pt == kRook) && ValidSquare(src));
+    
+    u64 magic;
+    Bitboard occupancy_permutation_bitboards[4096], attack_reference_bitboards[4096], attacks[4096], mask, border, bb;
+    int epoch[4096], count = 0, permutations = 0, bits;
 
-//     Bitboard base_attack, occupied_bitboards[4096], attack_bitboards[4096], used[4096];
-//     u64 magic;
-//     bool valid;
-//     int base_attack_popcount, perm_num, calculated_perm;
+    border = 0;
+    border |= (kRank1Bitboard | kRank8Bitboard) & ~RankBitboard(src);
+    border |= (kFileABitboard | kFileHBitboard) & ~FileBitboard(src);
+    mask = GenerateSlidingAttacks(src, pt) & ~border;
+    bits = popcount(mask);
 
-//     base_attack = GenerateSlidingAttacks(src, pt);
-//     // Get rid of the edges and the source square to make sure they don't
-//     // interfere when generating a permutation
-//     if (SquareFile(src) != kFileA)
-//         base_attack &= ~kFileABitboard;
-//     if (SquareFile(src) != kFileH)
-//         base_attack &= ~kFileHBitboard;
-//     if (SquareRank(src) != kRank1)
-//         base_attack &= ~kRank1Bitboard;
-//     if (SquareRank(src) != kRank8)
-//         base_attack &= ~kRank8Bitboard;
-//     base_attack &= ~SquareBitboard(src);
-//     base_attack_popcount = popcount(base_attack);
-//     perm_num = 1 << base_attack_popcount;
 
-//     // Permute each potential occupancy situation and create a corresponding
-//     // attack bitboard
-//     for (int perm = 0; perm < perm_num; perm++) {
-//         // First, generate a permutation of potential occupancies for the given
-//         // base attack bitboard
-//         Bitboard bb = base_attack;
-//         occupied_bitboards[perm] = 0;
-//         for (int bit = 0; bit < base_attack_popcount; bit++)
-//         {
-//             Square sq = RemoveLSBFromBitboard(bb);
-//             if ((1 << bit) & perm)
-//                 occupied_bitboards[perm] |= SquareBitboard(sq);
-//         }
+    bb = 0;
+    permutations = 0;
 
-//         // Then, create an actual attack bitboard for that permutation
-//         attack_bitboards[perm] = GenerateSlidingAttacks(src, pt, occupied_bitboards[perm]);
-//     }
+    do
+    {
+        occupancy_permutation_bitboards[permutations] = bb;
+        attack_reference_bitboards[permutations] = GenerateSlidingAttacks(src, pt, bb);
 
-//     // Then, randomly guess until you get a magic that works
-//     for (int i = 0 ; i < kMagicSearchIters; i++)
-//     {
-//         std::cout << "\rOn iteration " << i << "/" << kMagicSearchIters;
-//         // Pick a random number, preferrably with not that many bits
-//         magic = GenerateRandomU64();
+        permutations++;
+        // This uses a clever Carry-Rippler effect to iterate through all
+        // the necessary bits
+        bb = (bb - mask) & mask;
+    }
+    while (bb);
 
-//         // Apply the magic to the base attack. If it results in a number with a
-//         // popcount less than 6, it's obviously not a correct magic (using the
-//         // base attack as the permutation will always result in a popcount of at
-//         // least 6)
-//         if (popcount(MagicTransform(base_attack, magic, 8)) < 6)
-//             continue;
+    for (int perm = 0; perm < permutations; )
+    {
+        // Firstly, keep generating random numbers until we find one that
+        // meets the minumum criteria. In this case, the minimum criteria is
+        // that, when the magic transform is perfomred on the base mask, the
+        // resulting permutation should have at least 6 bits, since that's
+        // the minimum amount of bits the mask can have
+        for (magic = 0; MagicTransform(mask, magic, 8) < 6;)
+            magic = GenerateRandomU64();
 
-//         // Zero out the used permutations
-//         memset(used, 0, sizeof(used));
+        for (++count, perm = 0; perm < permutations; perm++)
+        {
+            uint ind = MagicTransform(occupancy_permutation_bitboards[perm], magic, bits);
 
-//         // Iterate through all the permutations again
-//         for (int perm = 0, valid = true;
-//             valid && perm < perm_num;
-//             perm++
-//             )
-//         {
-//             // What perm does this magic result in?
-//             calculated_perm = MagicTransform(occupied_bitboards[perm], magic, base_attack_popcount);
-//             // If the calculated perumtation was found before but this time it
-//             // has a new attack bitboard, then there's a collision, so we can't
-//             // use this magic
-//             if (used[calculated_perm] == 0ULL)
-//                 used[calculated_perm] = attack_bitboards[perm];
-//             else if (used[calculated_perm] != attack_bitboards[perm])
-//             {
-//                 valid = false;
-//                 break;
-//             }
-//         }
-//         if (valid)
-//             return magic;
+            if (epoch[ind] < count)
+            {
+                epoch[ind] = count;
+                attacks[ind] = attack_reference_bitboards[ind];
+            }
+            else if (attacks[ind] != attack_reference_bitboards[perm])
+                break;
+        }
+    }
 
-//     }
-
-//     // We were unable to find a magic :(
-//     return 0;
-// }
+    return magic;
+}
 
 } // namespace ChessAI

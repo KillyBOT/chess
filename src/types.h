@@ -1,5 +1,5 @@
-#ifndef CHESS_AI_TYPES_H_
-#define CHESS_AI_TYPES_H_
+#ifndef STUPIDFISH_TYPES_H_
+#define STUPIDFISH_TYPES_H_
 
 #include <cstdint>
 #include <cassert>
@@ -194,11 +194,11 @@ constexpr CastlingRights operator&(Color c, CastlingRights cr) {
 // constexpr Value mate_in(int ply) { return VALUE_MATE - ply; }
 // constexpr Value mated_in(int ply) { return -VALUE_MATE + ply; }
 
-constexpr Square file_rank_square(File f, Rank r) { return Square((r << 3) + f); }
-constexpr Piece piece_color_type(Color c, PieceType pt) { return Piece((c << 3) + pt); }
+constexpr Square MakeSquare(File f, Rank r) { return Square((r << 3) + f); }
+constexpr Piece MakePiece(Color c, PieceType pt) { return Piece((c << 3) + pt); }
 
-constexpr PieceType type_of_piece(Piece pc) { return PieceType(pc & 7); }
-inline Color color_of_piece(Piece pc) {
+constexpr PieceType TypeOfPiece(Piece pc) { return PieceType(pc & 7); }
+inline Color ColorOfPiece(Piece pc) {
     assert(pc != Piece::kNoPiece);
     return Color(pc >> 3);
 }
@@ -214,19 +214,19 @@ constexpr Rank OppRankOfSquare(Color c, Square s) { return OppRankOfRank(c, Squa
 
 constexpr Direction GetPawnDir(Color c) { return c == Color::kWhite ? kUp : kDown; }
 
-constexpr Square GetMoveSrc(Move m) {
+constexpr Square MoveSrc(Move m) {
     assert(ValidMove(m));
     return Square((m >> 6) & 0x3F);
 }
-constexpr Square GetMoveDest(Move m) {
+constexpr Square MoveDest(Move m) {
     assert(ValidMove(m));
     return Square(m & 0x3F);
 }
-constexpr int GetMoveSrcAndDest(Move m) { return m & 0xFFF; }
+constexpr int MoveSrcAndDest(Move m) { return m & 0xFFF; }
 
-constexpr MoveType GetMoveType(Move m) { return MoveType(m & (3 << 14)); }
+constexpr MoveType TypeOfMove(Move m) { return MoveType(m & (3 << 14)); }
 
-constexpr PieceType GetMovePromotionType(Move m) { return PieceType(((m >> 12) & 3) + kKnight); }
+constexpr PieceType PromotionTypeOfMove(Move m) { return PieceType(((m >> 12) & 3) + kKnight); }
 
 // constexpr Move MakeMoveSrcDest(Square src, Square dst) { return Move((src << 6) + dst); }
 template<MoveType T>
@@ -241,4 +241,4 @@ constexpr Move MakeMove(Square src, Square dst, PieceType pt = kKnight, MoveType
 
 } // namespace ChessAI
 
-#endif // CHESS_AI_TYPES_H_
+#endif // STUPIDFISH_TYPES_H_

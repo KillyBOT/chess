@@ -1,5 +1,5 @@
-#ifndef CHESS_AI_BITBOARD_H_
-#define CHESS_AI_BITBOARD_H_
+#ifndef STUPIDFISH_BITBOARD_H_
+#define STUPIDFISH_BITBOARD_H_
 
 #include <string>
 #include <cassert>
@@ -212,4 +212,4 @@ u64 GenerateMagic(Square src, PieceType pt);
 
 } // namespace ChessAI
 
-#endif // CHESS_AI_BITBOARD_H_
+#endif // STUPIDFISH_BITBOARD_H_

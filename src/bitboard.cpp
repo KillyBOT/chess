@@ -29,7 +29,7 @@ std::string PrintBitboard(Bitboard bb) {
     for (Rank r = kRank8; r >= kRank1; --r)
     {
         for (File f = kFileA; f <= kFileH; ++f)
-            str += bb & SquareBitboard(file_rank_square(f, r)) ? "| X " : "|   ";
+            str += bb & SquareBitboard(MakeSquare(f, r)) ? "| X " : "|   ";
 
         str += "| " + std::to_string(r + 1) + '\n' + hline;
     }

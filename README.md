@@ -1,6 +1,9 @@
-# Chess
-This will be my attempt at both creating a chess game that people can actually play using SDL2, and at creating a competent chess AI. Hopefully this gives me more practice with C++ and SDL2, tools I will use for a big upcoming next project.
+# Chess AI
+This is a Chess AI that uses MCTS. It's built using the same general framework
+as Stockfish, though it's much simpler and also better documented (I hope). It
+is fully UCI compliant.
 
 ## Credits
 https://www.youtube.com/watch?v=U4ogK0MIzqk
 https://medium.com/dscvitpune/lets-create-a-chess-ai-8542a12afef
+https://github.com/official-stockfish/Stockfish
